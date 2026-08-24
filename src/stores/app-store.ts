@@ -1,0 +1,467 @@
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+
+import {
+  loadFile,
+  pickSavePath,
+  readDirectory,
+  startFileWatch,
+  stopAllWatches,
+  stopFileWatch,
+  writeTextFile,
+} from "@/lib/tauri-api";
+import { basename } from "@/lib/utils";
+import type { AppSettings, FileNode, RecentEntry, Tab } from "@/types";
+
+interface PendingClose {
+  tabIds: string[];
+  /** Close the window after resolving (app exit flow). */
+  exitAfter?: boolean;
+}
+
+interface AppState {
+  workspace: {
+    rootPath: string | null;
+    rootName: string | null;
+    tree: FileNode[];
+    loading: boolean;
+  };
+
+  tabs: Tab[];
+  activeTabId: string | null;
+  expandedDirs: Set<string>;
+
+  fileSearch: string;
+  findOpen: boolean;
+  /** Replace row visible in the find bar (Ctrl+H). */
+  findReplace: boolean;
+  findQuery: string;
+  quickOpenOpen: boolean;
+  settingsOpen: boolean;
+  projectSearchOpen: boolean;
+  sidebarVisible: boolean;
+
+  fileLoading: boolean;
+  fileError: string | null;
+  changedFiles: Set<string>;
+  /** Unsaved-close confirmation (Save/Don't save/Cancel). */
+  pendingClose: PendingClose | null;
+  /** Cursor position of the active editable surface (for status bar). */
+  cursor: { line: number; col: number };
+  /** Session restore: persisted open-tab paths (content is NOT restored). */
+  sessionTabs: string[];
+  sessionActive: string | null;
+  setCursor: (line: number, col: number) => void;
+
+  settings: AppSettings;
+  recents: RecentEntry[];
+
+  openFolder: (path: string) => Promise<void>;
+  openFile: (path: string) => Promise<void>;
+  closeTab: (tabId: string) => void;
+  closeOtherTabs: (tabId: string) => void;
+  closeAllTabs: () => void;
+  setActiveTab: (tabId: string) => void;
+  nextTab: () => void;
+  prevTab: () => void;
+
+  toggleDir: (path: string) => void;
+  setFileSearch: (query: string) => void;
+  setFindOpen: (open: boolean, replace?: boolean) => void;
+  setFindQuery: (query: string) => void;
+  setQuickOpenOpen: (open: boolean) => void;
+  setSettingsOpen: (open: boolean) => void;
+  setProjectSearchOpen: (open: boolean) => void;
+  toggleSidebar: () => void;
+  setSidebarVisible: (visible: boolean) => void;
+
+  reloadFile: (tabId: string) => Promise<void>;
+  markFileChanged: (path: string) => void;
+  clearFileChanged: (path: string) => void;
+  refreshTree: () => Promise<void>;
+
+  /** Editing */
+  updateDraft: (tabId: string, content: string) => void;
+  saveTab: (tabId: string) => Promise<void>;
+  saveActiveTab: () => Promise<void>;
+  /** Save As: OS dialog, writes draft to a new path and retargets the tab. */
+  saveTabAs: (tabId: string) => Promise<void>;
+  setPreviewMode: (tabId: string, preview: boolean) => void;
+  resolvePendingClose: (action: "save" | "discard" | "cancel") => Promise<void>;
+  /** Intercept window close; prompts for unsaved tabs. */
+  requestAppExit: () => Promise<void>;
+
+  updateSettings: (partial: Partial<AppSettings>) => void;
+  addRecent: (entry: RecentEntry) => void;
+  clearRecents: () => void;
+}
+
+function isDirty(tab: Tab | undefined): boolean {
+  return !!tab && tab.draft !== undefined && tab.draft !== tab.file.content;
+}
+
+const DEFAULT_SETTINGS: AppSettings = {
+  theme: "system",
+  fontSize: 14,
+  sidebarWidth: 20,
+  showLineNumbers: true,
+  wordWrap: true,
+  autoRefresh: true,
+  codeTheme: "auto",
+  markdownDefaultMode: "source",
+};
+
+export const useStore = create<AppState>()(
+  persist(
+    (set, get) => ({
+      workspace: { rootPath: null, rootName: null, tree: [], loading: false },
+
+      tabs: [],
+      activeTabId: null,
+      expandedDirs: new Set<string>(),
+
+      fileSearch: "",
+      findOpen: false,
+      findReplace: false,
+      findQuery: "",
+      quickOpenOpen: false,
+      settingsOpen: false,
+      projectSearchOpen: false,
+      sidebarVisible: true,
+
+      fileLoading: false,
+      fileError: null,
+      changedFiles: new Set<string>(),
+      pendingClose: null,
+      cursor: { line: 1, col: 1 },
+      sessionTabs: [],
+      sessionActive: null,
+
+      settings: DEFAULT_SETTINGS,
+      recents: [],
+
+      openFolder: async (path: string) => {
+        set({ workspace: { rootPath: null, rootName: null, tree: [], loading: true } });
+        try {
+          await stopAllWatches();
+          const tree = await readDirectory(path);
+          set({
+            workspace: { rootPath: path, rootName: basename(path), tree, loading: false },
+            expandedDirs: new Set([path]),
+          });
+          get().addRecent({ path, name: basename(path), isDir: true, openedAt: Date.now() });
+        } catch (e) {
+          set((state) => ({
+            workspace: { ...state.workspace, loading: false },
+            fileError: String(e),
+          }));
+        }
+      },
+
+      openFile: async (path: string) => {
+        const existing = get().tabs.find((t) => t.file.path === path);
+        if (existing) {
+          set({ activeTabId: existing.id });
+          return;
+        }
+        set({ fileLoading: true, fileError: null });
+        try {
+          const file = await loadFile(path);
+          const tab: Tab = {
+            id: path,
+            file,
+            previewMode:
+              file.viewerType === "markdown" && get().settings.markdownDefaultMode === "preview",
+          };
+          set((state) => ({
+            tabs: [...state.tabs, tab],
+            activeTabId: tab.id,
+            fileLoading: false,
+          }));
+          get().addRecent({ path, name: file.name, isDir: false, openedAt: Date.now() });
+          try {
+            await startFileWatch(path);
+          } catch (e) {
+            console.warn("[lightread] Failed start file watch:", path, e);
+          }
+        } catch (e) {
+          set({ fileLoading: false, fileError: String(e) });
+        }
+      },
+
+      closeTab: (tabId: string) => {
+        const tab = get().tabs.find((t) => t.id === tabId);
+        if (isDirty(tab)) {
+          set({ pendingClose: { tabIds: [tabId] } });
+          return;
+        }
+        if (tab) stopFileWatch(tab.file.path).catch(() => {});
+        set((state) => {
+          const idx = state.tabs.findIndex((t) => t.id === tabId);
+          const newTabs = state.tabs.filter((t) => t.id !== tabId);
+          let newActive = state.activeTabId;
+          if (state.activeTabId === tabId) {
+            newActive = newTabs[Math.min(idx, newTabs.length - 1)]?.id ?? null;
+          }
+          return { tabs: newTabs, activeTabId: newActive };
+        });
+      },
+
+      closeOtherTabs: (tabId: string) => {
+        const dirty = get().tabs.filter((t) => t.id !== tabId && isDirty(t));
+        if (dirty.length > 0) {
+          set({ pendingClose: { tabIds: dirty.map((t) => t.id) } });
+          return;
+        }
+        for (const tab of get().tabs) {
+          if (tab.id !== tabId) stopFileWatch(tab.file.path).catch(() => {});
+        }
+        const keep = get().tabs.find((t) => t.id === tabId);
+        set({ tabs: keep ? [keep] : [], activeTabId: keep?.id ?? null });
+      },
+
+      closeAllTabs: () => {
+        const dirty = get().tabs.filter((t) => isDirty(t));
+        if (dirty.length > 0) {
+          set({ pendingClose: { tabIds: dirty.map((t) => t.id) } });
+          return;
+        }
+        for (const tab of get().tabs) stopFileWatch(tab.file.path).catch(() => {});
+        set({ tabs: [], activeTabId: null });
+      },
+
+      setActiveTab: (tabId: string) => set({ activeTabId: tabId }),
+
+      nextTab: () => {
+        const { tabs, activeTabId } = get();
+        if (tabs.length === 0) return;
+        const idx = tabs.findIndex((t) => t.id === activeTabId);
+        const next = tabs[(idx + 1) % tabs.length];
+        set({ activeTabId: next.id });
+      },
+
+      prevTab: () => {
+        const { tabs, activeTabId } = get();
+        if (tabs.length === 0) return;
+        const idx = tabs.findIndex((t) => t.id === activeTabId);
+        const prev = tabs[(idx - 1 + tabs.length) % tabs.length];
+        set({ activeTabId: prev.id });
+      },
+
+      toggleDir: (path: string) => {
+        set((state) => {
+          const next = new Set(state.expandedDirs);
+          if (next.has(path)) {
+            next.delete(path);
+          } else {
+            next.add(path);
+          }
+          return { expandedDirs: next };
+        });
+      },
+
+      setFileSearch: (query: string) => set({ fileSearch: query }),
+      setFindOpen: (open, replace) =>
+        set({
+          findOpen: open,
+          findQuery: open ? get().findQuery : "",
+          findReplace: open ? (replace ?? get().findReplace) : false,
+        }),
+      setFindQuery: (query: string) => set({ findQuery: query }),
+      setQuickOpenOpen: (open: boolean) => set({ quickOpenOpen: open }),
+      setSettingsOpen: (open: boolean) => set({ settingsOpen: open }),
+      setProjectSearchOpen: (open: boolean) => set({ projectSearchOpen: open }),
+      toggleSidebar: () => set((state) => ({ sidebarVisible: !state.sidebarVisible })),
+      setSidebarVisible: (visible: boolean) => set({ sidebarVisible: visible }),
+
+      reloadFile: async (tabId: string) => {
+        const tab = get().tabs.find((t) => t.id === tabId);
+        if (!tab) return;
+        try {
+          const file = await loadFile(tab.file.path);
+          set((state) => ({
+            tabs: state.tabs.map((t) => (t.id === tabId ? { ...t, file, draft: undefined } : t)),
+            changedFiles: (() => {
+              const next = new Set(state.changedFiles);
+              next.delete(tab.file.path);
+              return next;
+            })(),
+          }));
+        } catch (e) {
+          set({ fileError: String(e) });
+        }
+      },
+
+      markFileChanged: (path: string) => {
+        const tab = get().tabs.find((t) => t.file.path === path);
+        if (!tab) return;
+        // Never auto-overwrite unsaved edits — surface the banner instead.
+        if (isDirty(tab) || tab.file.truncated) {
+          set((state) => {
+            const next = new Set(state.changedFiles);
+            next.add(path);
+            return { changedFiles: next };
+          });
+          return;
+        }
+        if (get().settings.autoRefresh) {
+          get().reloadFile(tab.id);
+          return;
+        }
+        set((state) => {
+          const next = new Set(state.changedFiles);
+          next.add(path);
+          return { changedFiles: next };
+        });
+      },
+
+      clearFileChanged: (path: string) =>
+        set((state) => {
+          const next = new Set(state.changedFiles);
+          next.delete(path);
+          return { changedFiles: next };
+        }),
+
+      refreshTree: async () => {
+        const { rootPath } = get().workspace;
+        if (!rootPath) return;
+        const tree = await readDirectory(rootPath);
+        set((state) => ({ workspace: { ...state.workspace, tree } }));
+      },
+
+      updateDraft: (tabId: string, content: string) => {
+        set((state) => ({
+          tabs: state.tabs.map((t) => (t.id === tabId ? { ...t, draft: content } : t)),
+        }));
+      },
+
+      saveTab: async (tabId: string) => {
+        const tab = get().tabs.find((t) => t.id === tabId);
+        if (!tab || !isDirty(tab)) return;
+        try {
+          await writeTextFile(tab.file.path, tab.draft!);
+          set((state) => ({
+            tabs: state.tabs.map((t) =>
+              t.id === tabId
+                ? {
+                    ...t,
+                    file: {
+                      ...t.file,
+                      content: t.draft!,
+                      size: new Blob([t.draft!]).size,
+                      lossy: false,
+                    },
+                    draft: undefined,
+                  }
+                : t,
+            ),
+            fileError: null,
+          }));
+        } catch (e) {
+          // Keep dirty state — never lose user input.
+          set({ fileError: `Failed to save ${tab.file.name}: ${String(e)}` });
+        }
+      },
+
+      saveActiveTab: async () => {
+        const id = get().activeTabId;
+        if (id) await get().saveTab(id);
+      },
+
+      saveTabAs: async (tabId: string) => {
+        const tab = get().tabs.find((t) => t.id === tabId);
+        if (!tab) return;
+        const nextPath = await pickSavePath(tab.file.name);
+        if (!nextPath) return;
+        const contents = tab.draft ?? tab.file.content;
+        await writeTextFile(nextPath, contents);
+        stopFileWatch(tab.file.path).catch(() => {});
+        const file = { ...tab.file, path: nextPath, name: basename(nextPath), content: contents };
+        set((state) => ({
+          tabs: state.tabs.map((t) =>
+            t.id === tabId ? { ...t, id: nextPath, file, draft: undefined, lossy: undefined } : t,
+          ),
+          activeTabId: state.activeTabId === tabId ? nextPath : state.activeTabId,
+        }));
+        get().addRecent({ path: nextPath, name: file.name, isDir: false, openedAt: Date.now() });
+        try {
+          await startFileWatch(nextPath);
+        } catch (e) {
+          console.warn("[lightread] Failed start file watch:", nextPath, e);
+        }
+      },
+
+      setPreviewMode: (tabId: string, preview: boolean) => {
+        set((state) => ({
+          tabs: state.tabs.map((t) => (t.id === tabId ? { ...t, previewMode: preview } : t)),
+        }));
+      },
+
+      resolvePendingClose: async (action: "save" | "discard" | "cancel") => {
+        const pending = get().pendingClose;
+        if (!pending) return;
+        set({ pendingClose: null });
+        if (action === "cancel") return;
+
+        if (action === "save") {
+          for (const id of pending.tabIds) {
+            await get().saveTab(id);
+          }
+        }
+
+        // Drop tabs (save failures keep content on disk-safe side: tab already
+        // saved or discarded by explicit choice).
+        for (const id of pending.tabIds) {
+          const tab = get().tabs.find((t) => t.id === id);
+          if (tab) stopFileWatch(tab.file.path).catch(() => {});
+        }
+        set((state) => {
+          const ids = new Set(pending.tabIds);
+          const idx = state.tabs.findIndex((t) => state.activeTabId === t.id);
+          const newTabs = state.tabs.filter((t) => !ids.has(t.id));
+          let newActive = state.activeTabId;
+          if (ids.has(state.activeTabId ?? "")) {
+            newActive = newTabs[Math.min(idx, newTabs.length - 1)]?.id ?? null;
+          }
+          return { tabs: newTabs, activeTabId: newActive };
+        });
+
+        if (pending.exitAfter) {
+          await getCurrentWindow().destroy();
+        }
+      },
+
+      requestAppExit: async () => {
+        const dirty = get().tabs.filter((t) => isDirty(t));
+        if (dirty.length > 0) {
+          set({ pendingClose: { tabIds: dirty.map((t) => t.id), exitAfter: true } });
+          return;
+        }
+        await getCurrentWindow().destroy();
+      },
+
+      setCursor: (line, col) => set({ cursor: { line, col } }),
+
+      updateSettings: (partial: Partial<AppSettings>) =>
+        set((state) => ({ settings: { ...state.settings, ...partial } })),
+
+      addRecent: (entry: RecentEntry) =>
+        set((state) => ({
+          recents: [entry, ...state.recents.filter((r) => r.path !== entry.path)].slice(0, 20),
+        })),
+
+      clearRecents: () => set({ recents: [] }),
+    }),
+    {
+      name: "lightread-store",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        recents: state.recents,
+        settings: state.settings,
+        sessionTabs: state.tabs.map((t) => t.file.path),
+        sessionActive: state.activeTabId,
+      }),
+    },
+  ),
+);

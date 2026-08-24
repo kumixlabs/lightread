@@ -1,0 +1,13 @@
+{
+  "$schema": "https://biomejs.dev/schemas/latest/schema.json",
+  "extends": [
+    "@kumix/biome-config/base"
+  ],
+  "files": {
+    "includes": [
+      "!!**/src-tauri/capabilities",
+      "!!**/src-tauri/gen",
+      "!!**/src-tauri/target"
+    ]
+  }
+}
