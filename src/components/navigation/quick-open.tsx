@@ -129,7 +129,7 @@ export function QuickOpen() {
             className="h-6 border-0 px-0 text-base shadow-none focus-visible:ring-0"
           />
         </div>
-        <div className="max-h-[400px] overflow-y-auto p-1.5">
+        <div className="max-h-100 overflow-y-auto p-1.5">
           {filtered.length === 0 && (
             <div className="px-4 py-8 text-center text-muted-foreground text-sm">
               No matching files

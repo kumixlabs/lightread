@@ -72,7 +72,7 @@ export function SettingsDialog() {
           <Settings className="size-5 text-muted-foreground" />
           <h2 className="font-semibold text-base">Settings</h2>
         </div>
-        <Tabs defaultValue="appearance" className="flex min-h-[420px]">
+        <Tabs defaultValue="appearance" className="flex min-h-105">
           <div className="w-44 shrink-0 border-border border-r bg-muted/20 p-3">
             <TabsList
               variant="line"

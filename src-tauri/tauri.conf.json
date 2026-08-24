@@ -39,19 +39,13 @@
     "fileAssociations": [
       {
         "name": "Markdown Document",
-        "ext": [
-          "md",
-          "markdown"
-        ],
+        "ext": ["md", "markdown"],
         "role": "Editor",
         "mimeType": "text/markdown"
       },
       {
         "name": "Text Document",
-        "ext": [
-          "txt",
-          "log"
-        ],
+        "ext": ["txt", "log"],
         "role": "Editor",
         "mimeType": "text/plain"
       }

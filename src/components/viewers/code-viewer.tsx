@@ -218,7 +218,7 @@ export function CodeViewer({
                 <span
                   className={cn(
                     "code-line-content flex-1 pr-4",
-                    wordWrap ? "whitespace-pre-wrap break-words" : "whitespace-pre",
+                    wordWrap ? "wrap-break-word whitespace-pre-wrap" : "whitespace-pre",
                   )}
                   // biome-ignore lint/security/noDangerouslySetInnerHtml: HTML pre-sanitized by syntax highlighter
                   dangerouslySetInnerHTML={{ __html: line.html }}

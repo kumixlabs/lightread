@@ -10,7 +10,7 @@ interface UnsupportedViewerProps {
 
 export function UnsupportedViewer({ file }: UnsupportedViewerProps) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-5 bg-gradient-to-b from-background to-muted/20 p-8 text-center">
+    <div className="flex h-full flex-col items-center justify-center gap-5 bg-linear-to-b from-background to-muted/20 p-8 text-center">
       <div className="flex size-20 items-center justify-center rounded-2xl bg-muted/50">
         <FileWarning className="size-10 text-muted-foreground/50" />
       </div>

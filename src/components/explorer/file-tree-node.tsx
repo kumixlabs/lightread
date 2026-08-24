@@ -163,7 +163,7 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps) {
     return (
       <div>
         <div
-          className="group flex cursor-pointer select-none items-center gap-1 py-[3px] pr-2 text-[13px] transition-colors hover:bg-sidebar-accent/50"
+          className="group flex cursor-pointer select-none items-center gap-1 py-0.75 pr-2 text-[13px] transition-colors hover:bg-sidebar-accent/50"
           style={{ paddingLeft }}
           onClick={handleClick}
           onKeyDown={handleKeyDown}
@@ -209,7 +209,7 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps) {
   return (
     <div
       className={cn(
-        "flex cursor-pointer select-none items-center gap-1 py-[3px] pr-2 text-[13px] transition-colors",
+        "flex cursor-pointer select-none items-center gap-1 py-0.75 pr-2 text-[13px] transition-colors",
         isActive
           ? "bg-primary/12 font-medium text-primary"
           : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50",
