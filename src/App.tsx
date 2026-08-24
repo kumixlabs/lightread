@@ -1,6 +1,7 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { FileUp, FolderDown } from "lucide-react";
 
 import { TooltipProvider } from "@kumix/ui/ui/tooltip";
 import { AppShell } from "@/components/layout/app-shell";
@@ -15,6 +16,7 @@ export default function App() {
   useKeyboardShortcuts();
   useFileWatcher();
 
+  const [isDragOver, setIsDragOver] = useState(false);
   const openFile = useStore((s) => s.openFile);
   const openFolder = useStore((s) => s.openFolder);
 
@@ -35,14 +37,16 @@ export default function App() {
     };
   }, [handleOpenFile, handleOpenFolder]);
 
-  // Restore last session's tabs (paths only — drafts are never restored).
+  // Restore last session's workspace folder + tabs (paths only — drafts are
+  // never restored).
   useEffect(() => {
     const s = useStore.getState();
-    const paths = s.sessionTabs;
-    if (paths.length === 0 || s.tabs.length > 0) return;
+    if (s.tabs.length > 0) return;
     let cancelled = false;
     (async () => {
-      for (const p of paths) {
+      if (s.sessionRootPath) await s.openFolder(s.sessionRootPath).catch(() => {});
+      if (cancelled) return;
+      for (const p of s.sessionTabs) {
         if (cancelled) return;
         await s.openFile(p).catch(() => {});
       }
@@ -90,56 +94,63 @@ export default function App() {
     };
   }, []);
 
-  const handleDrop = useCallback(
-    async (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const items = e.dataTransfer.items;
-      if (!items) return;
-
-      const paths: string[] = [];
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (item.kind === "file") {
-          const file = item.getAsFile();
-          if (file) {
-            paths.push((file as File & { path?: string }).path || file.name);
-          }
-        }
-      }
-
-      for (const p of paths) {
-        try {
-          const meta = await getFileMetadata(p);
-          if (meta.is_dir) {
-            await openFolder(p);
-          } else {
-            await openFile(p);
-          }
-        } catch {
-          await openFile(p);
-        }
-      }
-    },
-    [openFile, openFolder],
-  );
-
+  // Native Tauri v2 window drag-and-drop listener for external files/folders.
   useEffect(() => {
-    const preventDefault = (e: DragEvent) => {
-      e.preventDefault();
-    };
-    window.addEventListener("dragover", preventDefault);
-    window.addEventListener("drop", preventDefault);
+    let unlisten: (() => void) | undefined;
+    let cancelled = false;
+
+    getCurrentWindow()
+      .onDragDropEvent(async (event) => {
+        const payload = event.payload;
+        if (payload.type === "enter") {
+          setIsDragOver(true);
+        } else if (payload.type === "leave") {
+          setIsDragOver(false);
+        } else if (payload.type === "drop") {
+          setIsDragOver(false);
+          for (const p of payload.paths) {
+            try {
+              const meta = await getFileMetadata(p);
+              if (meta.is_dir) {
+                await openFolder(p);
+              } else {
+                await openFile(p);
+              }
+            } catch {
+              await openFile(p);
+            }
+          }
+        }
+      })
+      .then((fn) => {
+        if (cancelled) fn();
+        else unlisten = fn;
+      });
+
     return () => {
-      window.removeEventListener("dragover", preventDefault);
-      window.removeEventListener("drop", preventDefault);
+      cancelled = true;
+      unlisten?.();
     };
-  }, []);
+  }, [openFile, openFolder]);
 
   return (
     <TooltipProvider delay={300}>
-      <div onDrop={handleDrop} className="h-screen w-screen overflow-hidden">
+      <div className="relative h-screen w-screen overflow-hidden">
         <AppShell />
+        {isDragOver && (
+          <div className="fade-in-0 pointer-events-none absolute inset-0 z-50 flex animate-in flex-col items-center justify-center gap-3 border-2 border-primary border-dashed bg-background/85 backdrop-blur-sm duration-150">
+            <div className="flex items-center gap-3 text-primary">
+              <FolderDown className="size-10 stroke-[1.5]" />
+              <FileUp className="size-10 stroke-[1.5]" />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold text-base text-foreground">Drop files or folder here</p>
+              <p className="text-muted-foreground text-xs">
+                Folders will open in explorer, files in new tabs
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </TooltipProvider>
   );

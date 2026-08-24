@@ -318,9 +318,12 @@ Detection order:
 
 -   Extensions: `.md`, `.markdown`, `.mdx` (rendered as Markdown).
 -   Source mode: plain-text editing, monospace.
--   Preview mode: GitHub-flavored Markdown — headings, lists, tables,
-    task lists, code blocks with highlighting, blockquotes, links,
-    images (local images resolved relative to the file).
+-   Preview mode: GitHub-flavored Markdown — headings with hover `#`
+    anchor copy, lists, tables with header borders, task lists, code
+    blocks highlighted via Shiki, blockquotes, links, local images
+    resolved via Tauri asset protocol, auto-generated Outline / TOC
+    panel with scroll-spy (h2-h3, hidden when <3 headings), collapsible
+    YAML frontmatter panel.
 -   Relative links to other files open those files in-app.
 -   External links open in system browser.
 -   Anchors (`#section`) scroll within the preview.
@@ -628,9 +631,13 @@ no arbitrary delete/rename.
 -   File associations for `.md`, `.markdown`, `.txt`, `.log`
     ("Open with LightRead"). Windows: installer registry; macOS: UTType;
     Linux: `.desktop` MimeType entries.
+-   Drag-and-drop: dropping files or folders onto the window opens tabs
+    or switches the workspace folder.
 -   Single-instance behavior: opening a file when LightRead is already
     running focuses the app and opens a tab (args forwarded via
     single-instance plugin event).
+-   In-app auto-updater: Tauri updater plugin verifying against GitHub
+    Releases latest artifacts with minisign cryptographic signatures.
 -   DPI-aware rendering (Tauri default).
 
 ------------------------------------------------------------------------
@@ -639,8 +646,9 @@ no arbitrary delete/rename.
 
 Persisted (localStorage via zustand persist):
 
--   `settings`: theme, fontSize, wordWrap, showLineNumbers, codeTheme,
-    autoRefresh, markdownDefaultMode.
+-   `settings`: theme, fontSize, lineHeight, wordWrap, showLineNumbers,
+    codeTheme, autoRefresh, markdownDefaultMode, sidebarWidth. Deep-merged
+    with defaults on hydrate to keep newly added settings resilient.
 -   `recents`.
 -   `sessionTabs` / `sessionActive`: open-tab **paths** restored on
     launch. Drafts (unsaved content) are never persisted.
@@ -721,6 +729,8 @@ src-tauri/src/
 -   [x] Pretty JSON display
 -   [x] `.csv`/`.tsv` table view
 -   [x] Recents, watchers, settings, shortcuts, themes
+-   [x] Native drag-and-drop for files and folders
+-   [x] In-app auto-updater with signature verification and restart flow
 
 ------------------------------------------------------------------------
 

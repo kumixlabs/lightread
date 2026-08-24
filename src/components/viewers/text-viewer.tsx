@@ -65,7 +65,7 @@ export function TextViewer({ content }: TextViewerProps) {
       >
         <pre
           className="min-w-full py-3 font-mono leading-[1.6]"
-          style={{ fontSize: `${settings.fontSize}px` }}
+          style={{ fontSize: `${settings.fontSize}px`, lineHeight: settings.lineHeight }}
         >
           <code className="block">
             {lines.map((line, i) => (

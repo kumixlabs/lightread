@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Braces,
   ChevronDown,
@@ -130,6 +130,12 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps) {
 
   const isExpanded = expandedDirs.has(node.path);
   const isActive = activeTabId === node.path;
+  const rowRef = useRef<HTMLDivElement>(null);
+
+  // Keep the active file visible when it becomes active (open/switch).
+  useEffect(() => {
+    if (isActive) rowRef.current?.scrollIntoView({ block: "nearest" });
+  }, [isActive]);
 
   useEffect(() => {
     if (isExpanded && node.isDir && lazyChildren === undefined && !loadingChildren) {
@@ -208,6 +214,7 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps) {
 
   return (
     <div
+      ref={rowRef}
       className={cn(
         "flex cursor-pointer select-none items-center gap-1 py-0.75 pr-2 text-[13px] transition-colors",
         isActive

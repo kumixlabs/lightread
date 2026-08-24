@@ -44,3 +44,18 @@ export function relativePath(fullPath: string, basePath: string): string {
 export function joinPath(base: string, relative: string): string {
   return `${base.replace(/\\/g, "/").replace(/\/$/, "")}/${relative}`;
 }
+
+export function findMatches(content: string, query: string, caseSensitive: boolean): number[] {
+  if (!query || !content) return [];
+  const flags = caseSensitive ? "g" : "gi";
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(escaped, flags);
+  const result: number[] = [];
+  let m = regex.exec(content);
+  while (m !== null) {
+    result.push(m.index);
+    if (m.index === regex.lastIndex) regex.lastIndex++;
+    m = regex.exec(content);
+  }
+  return result;
+}

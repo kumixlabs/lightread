@@ -56,6 +56,7 @@ export function HtmlViewer({ content }: HtmlViewerProps) {
             showLineNumbers={settings.showLineNumbers}
             wordWrap={settings.wordWrap}
             fontSize={settings.fontSize}
+            lineHeight={settings.lineHeight}
             codeTheme={settings.codeTheme}
           />
         )}

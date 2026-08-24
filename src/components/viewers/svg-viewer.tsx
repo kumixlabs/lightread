@@ -58,6 +58,7 @@ export function SvgViewer({ content }: SvgViewerProps) {
             showLineNumbers={settings.showLineNumbers}
             wordWrap={settings.wordWrap}
             fontSize={settings.fontSize}
+            lineHeight={settings.lineHeight}
             codeTheme={settings.codeTheme}
           />
         )}

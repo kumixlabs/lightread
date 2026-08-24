@@ -13,9 +13,11 @@ Initial release.
 
 ### Viewing
 
-- Markdown preview (GitHub-flavored): tables, task lists, highlighted code blocks, blockquotes, local images, in-document anchor links. Raw HTML is stripped.
+- Markdown preview (GitHub-flavored): Shiki syntax-highlighted code blocks (matching themes), tables, task lists, blockquotes, local images (via Tauri asset protocol), in-document anchor links with hover `#` copy, auto-generated table of contents / Outline panel with scroll-spy, collapsible YAML frontmatter panel. Raw HTML is stripped.
 - Source ⇄ Preview toggle per tab (`Ctrl+Shift+V`); default mode configurable.
 - Code viewer with Shiki syntax highlighting (24 core languages at startup, 100+ lazy on demand), themes, line numbers, word wrap, copy button.
+- Configurable font size (10–28 px) and line height (1.00–3.00) applied across markdown preview, plain-text editor, and code viewers.
+- Searchable code theme combobox with live filtering and label previews.
 - Minified JSON under 2 MB pretty-printed on display.
 - `.csv` / `.tsv` table view with sticky header and delimiter auto-detection.
 - Image viewer (zoom, fit, transparency checkerboard), SVG preview (sandboxed), HTML preview (sandboxed iframe, no scripts).
@@ -40,8 +42,11 @@ Initial release.
 
 ### Platform
 
+- Native window drag-and-drop support for opening files and folder workspaces with dropzone overlay.
+- In-app auto-updater (Tauri v2 plugin + minisign signature verification) in Settings dialog with seamless download & relaunch.
+- Settings "Reset to defaults" action.
 - Status bar: word/char count, line/column, encoding (UTF-8 / lossy), file size.
 - Light/dark/system themes, font size, word wrap, line numbers, Markdown default mode settings.
 - Full keyboard shortcut set (`Ctrl+O`, `Ctrl+Shift+O`, `Ctrl+B`, `Ctrl+=/-/0`, `F11`, …).
 - Explicit CSP, sandboxed previews, minimal Tauri permissions; all file I/O via scoped Rust commands.
-- Release logging to rotating file; no network, no telemetry.
+- Release logging to rotating file; no telemetry.

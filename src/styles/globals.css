@@ -2,6 +2,7 @@
 @import "shadcn/tailwind.css";
 @import "@kumix/ui/theme";
 @import "@fontsource-variable/geist";
+@plugin "@tailwindcss/typography";
 
 @theme {
   --font-sans: "Geist Variable", sans-serif;
@@ -40,9 +41,7 @@
   background: transparent;
 }
 
-.shiki {
-  background-color: transparent !important;
-}
+/* shiki pre keeps its own theme background (github-light/dark) */
 
 .code-line {
   display: flex;
@@ -67,20 +66,18 @@
   flex-shrink: 0;
 }
 
-.hljs {
-  background: transparent !important;
-}
+/* rehype-highlight removed; no .hljs users left */
 
 .prose-custom h1 {
-  scroll-margin-top: 1rem;
+  scroll-margin-top: 3.5rem;
 }
 
 .prose-custom h2 {
-  scroll-margin-top: 1rem;
+  scroll-margin-top: 3.5rem;
 }
 
 .prose-custom h3 {
-  scroll-margin-top: 1rem;
+  scroll-margin-top: 3.5rem;
 }
 
 @keyframes fade-in {
@@ -94,4 +91,144 @@
 
 .animate-fade-in {
   animation: fade-in 0.15s ease-out;
+}
+
+/* GitHub-like markdown preview (tailwind typography + tweaks) */
+.markdown-body {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-links: var(--primary);
+  --tw-prose-bold: var(--foreground);
+  --tw-prose-counters: var(--muted-foreground);
+  --tw-prose-bullets: var(--muted-foreground);
+  --tw-prose-hr: var(--border);
+  --tw-prose-quotes: var(--muted-foreground);
+  --tw-prose-quote-borders: var(--border);
+  --tw-prose-captions: var(--muted-foreground);
+  --tw-prose-code: var(--foreground);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
+}
+
+.markdown-body :is(h1, h2, h3, h4, h5, h6) {
+  scroll-margin-top: 3.5rem;
+  margin-top: 1.25em !important;
+  margin-bottom: 0.5em !important;
+  line-height: 1.25;
+}
+
+.markdown-body h1 {
+  font-size: 1.75em !important;
+  margin-top: 0 !important;
+}
+
+.markdown-body h2 {
+  font-size: 1.35em !important;
+}
+
+.markdown-body h3 {
+  font-size: 1.15em !important;
+}
+
+.markdown-body h4 {
+  font-size: 1em !important;
+}
+
+.markdown-body p {
+  margin-top: 0 !important;
+  margin-bottom: 0.75em !important;
+}
+
+.markdown-body :is(ul, ol) {
+  margin-top: 0 !important;
+  margin-bottom: 0.75em !important;
+  padding-left: 1.5em !important;
+}
+
+.markdown-body li {
+  margin-top: 0.2em !important;
+  margin-bottom: 0.2em !important;
+}
+
+.markdown-body hr {
+  margin-top: 1.5em !important;
+  margin-bottom: 1.5em !important;
+}
+
+.markdown-body blockquote {
+  margin-top: 0 !important;
+  margin-bottom: 0.75em !important;
+}
+
+.markdown-body pre {
+  margin-top: 0.75em !important;
+  margin-bottom: 0.75em !important;
+}
+
+.markdown-body table {
+  margin-top: 0 !important;
+  margin-bottom: 0.75em !important;
+}
+
+.markdown-body :is(h1, h2) {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.3em;
+}
+
+.markdown-body :not(pre) > code {
+  background: color-mix(in oklch, var(--muted-foreground) 12%, transparent);
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  font-weight: 500;
+}
+
+.markdown-body :not(pre) > code::before,
+.markdown-body :not(pre) > code::after {
+  content: none; /* no fake backticks */
+}
+
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+  font-weight: 400;
+}
+
+.markdown-body table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.markdown-body :is(th, td) {
+  border: 1px solid var(--border);
+  padding: 6px 13px;
+}
+
+.markdown-body th {
+  background: color-mix(in oklch, var(--muted-foreground) 10%, transparent);
+  font-weight: 600;
+}
+
+.markdown-body blockquote {
+  color: var(--muted-foreground);
+  border-left: 3px solid var(--border);
+  padding-left: 1em;
+}
+
+.markdown-body ul.contains-task-list {
+  list-style: none;
+  padding-left: 0.5em;
+}
+
+.markdown-body img {
+  border-radius: 8px;
+}
+
+/* Shiki pre inside markdown: our surface wins over shiki's inline bg
+   (inline style beats normal CSS, so !important is required).
+   Light mode: github-light tokens on light muted. Dark: github-dark on dark muted. */
+.markdown-body pre {
+  background: var(--muted) !important;
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }

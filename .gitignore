@@ -127,6 +127,11 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+# Tauri build & keys
+src-tauri/target/
+*.key
+*.key.pub
+
 # other
 .claude
 .turbo

@@ -7,8 +7,10 @@ A lightweight document reader & editor for Windows, macOS, and Linux. Think Wind
 ## Features
 
 ### Viewing
-- **Markdown preview** — GitHub-flavored: tables, task lists, highlighted code blocks, local images, anchor links. Raw HTML is stripped for safety.
+- **Markdown preview** — GitHub-flavored: Shiki-highlighted code blocks, tables, task lists, local images via asset protocol, hover `#` anchor links, Outline / TOC panel with scroll-spy, collapsible YAML frontmatter. Raw HTML is stripped for safety.
 - **Code viewer** — Shiki syntax highlighting (100+ languages, lazy-loaded), themes, line numbers, word wrap. Read-only by design.
+- **Customizable typography** — font size (10–28 px) and line height (1.00–3.00) synced across preview, editor, and code viewers.
+- **Searchable code themes** — Shiki color scheme selector with instant filter.
 - **Pretty JSON** — minified JSON is indented on display.
 - **CSV/TSV tables** — sticky header, delimiter auto-detect.
 - **Images / SVG / HTML** — zoomable images, sandboxed previews (no script execution).
@@ -25,8 +27,12 @@ A lightweight document reader & editor for Windows, macOS, and Linux. Think Wind
 - **Tabs** — middle-click close, close others/all, cycle (`Ctrl+Tab`).
 - **Quick open** (`Ctrl+P`), **project search** (`Ctrl+Shift+F`), breadcrumbs, recents.
 - **Session restore** — last open tabs (paths only) reopen on launch.
-- **Drag & drop** files and folders; **"Open with LightRead"** file associations (`.md`, `.txt`, `.log`) with single-instance forwarding.
+### Platform & System
+- **Auto-updater** — built-in update checker & installer in Settings backed by GitHub Releases and cryptographic signatures.
+- **Drag & drop** — drop files or folders directly into the window to open.
+- **Single-instance & associations** — "Open with LightRead" file associations (`.md`, `.txt`, `.log`).
 - **Status bar** — word/char count, line/column, encoding, file size.
+- **Settings reset** — one-click "Reset to defaults".
 
 ## Download
 

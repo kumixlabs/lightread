@@ -82,6 +82,7 @@ export type CodeTheme =
 export interface AppSettings {
   theme: Theme;
   fontSize: number;
+  lineHeight: number;
   sidebarWidth: number;
   showLineNumbers: boolean;
   wordWrap: boolean;

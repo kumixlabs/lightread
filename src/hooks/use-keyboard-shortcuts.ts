@@ -10,34 +10,35 @@ export function useKeyboardShortcuts() {
       const s = useStore.getState();
       const ctrl = e.ctrlKey || e.metaKey;
       const shift = e.shiftKey;
+      const key = e.key.toLowerCase(); // CapsLock/layout must not break letters
 
-      if (ctrl && shift && e.key === "O") {
+      if (ctrl && shift && key === "o") {
         e.preventDefault();
         pickFolder().then((p) => {
           if (p) s.openFolder(p);
         });
         return;
       }
-      if (ctrl && !shift && e.key === "o") {
+      if (ctrl && !shift && key === "o") {
         e.preventDefault();
         pickFile().then((p) => {
           if (p) s.openFile(p);
         });
         return;
       }
-      if (ctrl && !shift && e.key === "s") {
+      if (ctrl && !shift && key === "s") {
         e.preventDefault();
         s.saveActiveTab();
         return;
       }
-      if (ctrl && shift && (e.key === "S" || e.key === "s")) {
+      if (ctrl && shift && key === "s") {
         if (s.activeTabId) {
           e.preventDefault();
           s.saveTabAs(s.activeTabId);
         }
         return;
       }
-      if (ctrl && shift && (e.key === "V" || e.key === "v")) {
+      if (ctrl && shift && key === "v") {
         const tab = s.tabs.find((t) => t.id === s.activeTabId);
         if (tab?.file.viewerType === "markdown") {
           e.preventDefault();
@@ -45,32 +46,32 @@ export function useKeyboardShortcuts() {
         }
         return;
       }
-      if (ctrl && !shift && e.key === "p") {
+      if (ctrl && !shift && key === "p") {
         e.preventDefault();
         s.setQuickOpenOpen(true);
         return;
       }
-      if (ctrl && !shift && e.key === "f") {
+      if (ctrl && !shift && key === "f") {
         e.preventDefault();
         s.setFindOpen(true);
         return;
       }
-      if (ctrl && !shift && e.key === "h") {
+      if (ctrl && !shift && key === "h") {
         e.preventDefault();
         s.setFindOpen(true, true);
         return;
       }
-      if (ctrl && shift && (e.key === "F" || e.key === "f")) {
+      if (ctrl && shift && key === "f") {
         e.preventDefault();
         s.setProjectSearchOpen(true);
         return;
       }
-      if (ctrl && !shift && e.key === "w") {
+      if (ctrl && !shift && key === "w") {
         e.preventDefault();
         if (s.activeTabId) s.closeTab(s.activeTabId);
         return;
       }
-      if (ctrl && e.key === "Tab") {
+      if (ctrl && (e.code === "Tab" || e.key === "Tab")) {
         e.preventDefault();
         if (shift) s.prevTab();
         else s.nextTab();
@@ -86,7 +87,7 @@ export function useKeyboardShortcuts() {
         }
         return;
       }
-      if (ctrl && e.key === "b") {
+      if (ctrl && key === "b") {
         e.preventDefault();
         s.toggleSidebar();
         return;
@@ -103,6 +104,11 @@ export function useKeyboardShortcuts() {
         return;
       }
       if (e.key === "Escape") {
+        // Fullscreen first: Esc always returns to windowed like native apps.
+        const win = getCurrentWindow();
+        win.isFullscreen().then((fs) => {
+          if (fs) win.setFullscreen(false);
+        });
         if (s.settingsOpen) {
           s.setSettingsOpen(false);
           return;

@@ -1,85 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
-import { createHighlighter, type Highlighter } from "shiki";
+import type { Highlighter } from "shiki";
 
+import { CORE_LANGS, ensureLang, ensureTheme, getHighlighter } from "@/lib/shiki";
 import { cn } from "@/lib/utils";
-
-const CORE_LANGS = [
-  "typescript",
-  "javascript",
-  "json",
-  "json5",
-  "jsonl",
-  "yaml",
-  "toml",
-  "xml",
-  "html",
-  "css",
-  "scss",
-  "markdown",
-  "bash",
-  "powershell",
-  "sql",
-  "dockerfile",
-  "makefile",
-  "python",
-  "go",
-  "rust",
-  "java",
-  "c",
-  "cpp",
-  "csharp",
-];
-
-const INITIAL_THEMES = ["github-light", "github-dark"] as const;
-const EXTRA_THEMES = [
-  "one-dark-pro",
-  "dracula",
-  "nord",
-  "vitesse-dark",
-  "vitesse-light",
-  "catppuccin-mocha",
-  "catppuccin-latte",
-  "monokai",
-];
-
-const loadedThemes = new Set<string>([...INITIAL_THEMES]);
-
-let highlighterPromise: Promise<Highlighter> | null = null;
-
-function getHighlighter(): Promise<Highlighter> {
-  if (!highlighterPromise) {
-    highlighterPromise = createHighlighter({
-      langs: CORE_LANGS,
-      themes: [...INITIAL_THEMES],
-    });
-  }
-  return highlighterPromise;
-}
-
-const loadedLangs = new Set<string>(CORE_LANGS);
-
-/** Non-core languages are loaded on demand (keeps startup light). */
-async function ensureLang(highlighter: Highlighter, lang: string): Promise<void> {
-  if (loadedLangs.has(lang)) return;
-  loadedLangs.add(lang); // mark first: a failed load falls back to plaintext
-  try {
-    await highlighter.loadLanguage(lang as never);
-  } catch {
-    // unknown language — getLoadedLanguages() check keeps plaintext fallback
-  }
-}
-
-async function ensureTheme(highlighter: Highlighter, theme: string): Promise<void> {
-  if (loadedThemes.has(theme)) return;
-  if (!EXTRA_THEMES.includes(theme)) return;
-  loadedThemes.add(theme);
-  try {
-    await highlighter.loadTheme(theme as never);
-  } catch {
-    loadedThemes.delete(theme);
-  }
-}
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -91,6 +15,7 @@ interface CodeViewerProps {
   showLineNumbers: boolean;
   wordWrap: boolean;
   fontSize: number;
+  lineHeight: number;
   codeTheme: string;
 }
 
@@ -100,6 +25,7 @@ export function CodeViewer({
   showLineNumbers,
   wordWrap,
   fontSize,
+  lineHeight,
   codeTheme,
 }: CodeViewerProps) {
   const [highlighter, setHighlighter] = useState<Highlighter | null>(null);
@@ -125,15 +51,14 @@ export function CodeViewer({
 
   useEffect(() => {
     if (!highlighter) return;
-    if (EXTRA_THEMES.includes(activeTheme)) {
-      setThemeReady(false);
-      ensureTheme(highlighter, activeTheme).then(() => setThemeReady(true));
-    }
+    if (activeTheme === "github-dark" || activeTheme === "github-light") return;
+    setThemeReady(false);
+    ensureTheme(highlighter, activeTheme).then(() => setThemeReady(true));
   }, [highlighter, activeTheme]);
 
   useEffect(() => {
     if (!highlighter) return;
-    if (loadedLangs.has(language)) return;
+    if (CORE_LANGS.includes(language)) return;
     setLangReady(false);
     ensureLang(highlighter, language).then(() => setLangReady(true));
   }, [highlighter, language]);
@@ -207,7 +132,7 @@ export function CodeViewer({
       >
         <pre
           className="min-w-full py-3 font-mono leading-[1.65]"
-          style={{ fontSize: `${fontSize}px` }}
+          style={{ fontSize: `${fontSize}px`, lineHeight }}
         >
           <code className="block">
             {lines.map((line) => (

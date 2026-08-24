@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { Button } from "@kumix/ui/ui/button";
 import {
   Dialog,
@@ -53,12 +55,51 @@ function UnsavedChangesDialog() {
   );
 }
 
-export function AppShell() {
-  const sidebarVisible = useStore((s) => s.sidebarVisible);
-  const sidebarWidth = useStore((s) => s.settings.sidebarWidth);
+function SidebarPane({ width, onResize }: { width: number; onResize: (px: number) => void }) {
+  // Freeze initial width per mount: re-feeding a changing defaultSize while
+  // dragging re-registers the panel and fights the resize gesture.
+  const [initialWidth] = useState(width);
+  return (
+    <ResizablePanelGroup orientation="horizontal">
+      <ResizablePanel
+        defaultSize={initialWidth}
+        minSize={250}
+        maxSize={500}
+        onResize={(size) => onResize(size.inPixels)}
+      >
+        <Sidebar />
+      </ResizablePanel>
+      <ResizableHandle />
+      <ResizablePanel>
+        <div className="flex h-full flex-col bg-background">
+          <Toolbar />
+          <TabsAndMain />
+        </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
+  );
+}
+
+function TabsAndMain() {
   const tabs = useStore((s) => s.tabs);
   const activeTabId = useStore((s) => s.activeTabId);
   const findOpen = useStore((s) => s.findOpen);
+  return (
+    <>
+      {tabs.length > 0 && <TabBar />}
+      <div className="relative flex-1 overflow-hidden">
+        {findOpen && activeTabId && <FindBar />}
+        {activeTabId ? <ViewerRouter /> : <WelcomeScreen />}
+      </div>
+      <StatusBar />
+    </>
+  );
+}
+
+export function AppShell() {
+  const sidebarVisible = useStore((s) => s.sidebarVisible);
+  const sidebarWidth = useStore((s) => s.settings.sidebarWidth);
+  const updateSettings = useStore((s) => s.updateSettings);
   const quickOpenOpen = useStore((s) => s.quickOpenOpen);
   const settingsOpen = useStore((s) => s.settingsOpen);
   const projectSearchOpen = useStore((s) => s.projectSearchOpen);
@@ -66,12 +107,7 @@ export function AppShell() {
   const mainArea = (
     <div className="flex h-full flex-col bg-background">
       <Toolbar />
-      {tabs.length > 0 && <TabBar />}
-      <div className="relative flex-1 overflow-hidden border-border border-l">
-        {findOpen && activeTabId && <FindBar />}
-        {activeTabId ? <ViewerRouter /> : <WelcomeScreen />}
-      </div>
-      <StatusBar />
+      <TabsAndMain />
     </div>
   );
 
@@ -84,13 +120,7 @@ export function AppShell() {
       {!sidebarVisible ? (
         mainArea
       ) : (
-        <ResizablePanelGroup orientation="horizontal">
-          <ResizablePanel defaultSize={sidebarWidth} minSize={180} maxSize={500}>
-            <Sidebar />
-          </ResizablePanel>
-          <ResizableHandle />
-          <ResizablePanel>{mainArea}</ResizablePanel>
-        </ResizablePanelGroup>
+        <SidebarPane width={sidebarWidth} onResize={(px) => updateSettings({ sidebarWidth: px })} />
       )}
     </>
   );

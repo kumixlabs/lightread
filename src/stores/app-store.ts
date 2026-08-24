@@ -37,6 +37,8 @@ interface AppState {
   /** Replace row visible in the find bar (Ctrl+H). */
   findReplace: boolean;
   findQuery: string;
+  findCaseSensitive: boolean;
+  findIndex: number;
   quickOpenOpen: boolean;
   settingsOpen: boolean;
   projectSearchOpen: boolean;
@@ -52,6 +54,7 @@ interface AppState {
   /** Session restore: persisted open-tab paths (content is NOT restored). */
   sessionTabs: string[];
   sessionActive: string | null;
+  sessionRootPath: string | null;
   setCursor: (line: number, col: number) => void;
 
   settings: AppSettings;
@@ -69,6 +72,8 @@ interface AppState {
   toggleDir: (path: string) => void;
   setFileSearch: (query: string) => void;
   setFindOpen: (open: boolean, replace?: boolean) => void;
+  setFindCaseSensitive: (v: boolean) => void;
+  setFindIndex: (i: number) => void;
   setFindQuery: (query: string) => void;
   setQuickOpenOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
@@ -80,6 +85,7 @@ interface AppState {
   markFileChanged: (path: string) => void;
   clearFileChanged: (path: string) => void;
   refreshTree: () => Promise<void>;
+  expandAll: () => Promise<void>;
 
   /** Editing */
   updateDraft: (tabId: string, content: string) => void;
@@ -93,6 +99,7 @@ interface AppState {
   requestAppExit: () => Promise<void>;
 
   updateSettings: (partial: Partial<AppSettings>) => void;
+  resetSettings: () => void;
   addRecent: (entry: RecentEntry) => void;
   clearRecents: () => void;
 }
@@ -104,7 +111,8 @@ function isDirty(tab: Tab | undefined): boolean {
 const DEFAULT_SETTINGS: AppSettings = {
   theme: "system",
   fontSize: 14,
-  sidebarWidth: 20,
+  lineHeight: 1.75,
+  sidebarWidth: 260,
   showLineNumbers: true,
   wordWrap: true,
   autoRefresh: true,
@@ -125,6 +133,8 @@ export const useStore = create<AppState>()(
       findOpen: false,
       findReplace: false,
       findQuery: "",
+      findCaseSensitive: false,
+      findIndex: 0,
       quickOpenOpen: false,
       settingsOpen: false,
       projectSearchOpen: false,
@@ -137,6 +147,7 @@ export const useStore = create<AppState>()(
       cursor: { line: 1, col: 1 },
       sessionTabs: [],
       sessionActive: null,
+      sessionRootPath: null,
 
       settings: DEFAULT_SETTINGS,
       recents: [],
@@ -269,6 +280,8 @@ export const useStore = create<AppState>()(
           findReplace: open ? (replace ?? get().findReplace) : false,
         }),
       setFindQuery: (query: string) => set({ findQuery: query }),
+      setFindCaseSensitive: (v: boolean) => set({ findCaseSensitive: v }),
+      setFindIndex: (i: number) => set({ findIndex: i }),
       setQuickOpenOpen: (open: boolean) => set({ quickOpenOpen: open }),
       setSettingsOpen: (open: boolean) => set({ settingsOpen: open }),
       setProjectSearchOpen: (open: boolean) => set({ projectSearchOpen: open }),
@@ -328,6 +341,26 @@ export const useStore = create<AppState>()(
         if (!rootPath) return;
         const tree = await readDirectory(rootPath);
         set((state) => ({ workspace: { ...state.workspace, tree } }));
+      },
+
+      expandAll: async () => {
+        const { tree } = get().workspace;
+        if (tree.length === 0) return;
+        const paths: string[] = [];
+        // ponytail: full recursive expansion; if huge repos feel slow,
+        // add a depth cap or switch to on-demand expansion per level.
+        const walk = async (nodes: FileNode[]): Promise<void> => {
+          await Promise.all(
+            nodes
+              .filter((n) => n.isDir)
+              .map(async (n) => {
+                paths.push(n.path);
+                await walk(await readDirectory(n.path, 1));
+              }),
+          );
+        };
+        await walk(tree);
+        set({ expandedDirs: new Set(paths) });
       },
 
       updateDraft: (tabId: string, content: string) => {
@@ -446,6 +479,8 @@ export const useStore = create<AppState>()(
       updateSettings: (partial: Partial<AppSettings>) =>
         set((state) => ({ settings: { ...state.settings, ...partial } })),
 
+      resetSettings: () => set({ settings: { ...DEFAULT_SETTINGS } }),
+
       addRecent: (entry: RecentEntry) =>
         set((state) => ({
           recents: [entry, ...state.recents.filter((r) => r.path !== entry.path)].slice(0, 20),
@@ -456,11 +491,22 @@ export const useStore = create<AppState>()(
     {
       name: "lightread-store",
       storage: createJSONStorage(() => localStorage),
+      // Deep-merge settings so newly added defaults (e.g. lineHeight) survive
+      // restores from older persisted states instead of coming back undefined.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<AppState>;
+        return {
+          ...current,
+          ...p,
+          settings: { ...current.settings, ...(p.settings ?? {}) },
+        };
+      },
       partialize: (state) => ({
         recents: state.recents,
         settings: state.settings,
         sessionTabs: state.tabs.map((t) => t.file.path),
         sessionActive: state.activeTabId,
+        sessionRootPath: state.workspace.rootPath,
       }),
     },
   ),

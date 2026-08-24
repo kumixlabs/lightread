@@ -3,7 +3,7 @@ import { CaseSensitive, ChevronDown, ChevronUp, Replace, ReplaceAll, X } from "l
 
 import { Button } from "@kumix/ui/ui/button";
 import { Input } from "@kumix/ui/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, findMatches } from "@/lib/utils";
 import { useStore } from "@/stores/app-store";
 import { isEditable } from "@/types";
 
@@ -13,12 +13,14 @@ export function FindBar() {
   const findQuery = useStore((s) => s.findQuery);
   const setFindQuery = useStore((s) => s.setFindQuery);
   const findReplace = useStore((s) => s.findReplace);
+  const caseSensitive = useStore((s) => s.findCaseSensitive);
+  const setCaseSensitive = useStore((s) => s.setFindCaseSensitive);
+  const currentIndex = useStore((s) => s.findIndex);
+  const setCurrentIndex = useStore((s) => s.setFindIndex);
   const updateDraft = useStore((s) => s.updateDraft);
   const activeTabId = useStore((s) => s.activeTabId);
   const tabs = useStore((s) => s.tabs);
 
-  const [caseSensitive, setCaseSensitive] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [replacement, setReplacement] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -30,24 +32,14 @@ export function FindBar() {
     !activeTab.file.lossy &&
     !activeTab.file.truncated;
 
-  const matches = useMemo(() => {
-    if (!findQuery || !content) return [];
-    const flags = caseSensitive ? "g" : "gi";
-    const escaped = findQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const regex = new RegExp(escaped, flags);
-    const result: number[] = [];
-    let m = regex.exec(content);
-    while (m !== null) {
-      result.push(m.index);
-      if (m.index === regex.lastIndex) regex.lastIndex++;
-      m = regex.exec(content);
-    }
-    return result;
-  }, [findQuery, content, caseSensitive]);
+  const matches = useMemo(
+    () => findMatches(content, findQuery, caseSensitive),
+    [findQuery, content, caseSensitive],
+  );
 
   useEffect(() => {
     if (currentIndex >= matches.length) setCurrentIndex(0);
-  }, [matches, currentIndex]);
+  }, [matches, currentIndex, setCurrentIndex]);
 
   useEffect(() => {
     if (findOpen) requestAnimationFrame(() => inputRef.current?.focus());
@@ -113,7 +105,7 @@ export function FindBar() {
   if (!findOpen) return null;
 
   return (
-    <div className="absolute top-3 right-3 z-30 flex animate-fade-in flex-col items-end gap-1 rounded-lg border border-border bg-background/95 p-1 shadow-lg backdrop-blur">
+    <div className="absolute top-3 right-3 z-30 flex animate-fade-in flex-col items-start gap-1 rounded-lg border border-border bg-background/95 p-1 shadow-lg backdrop-blur">
       <div className="flex items-center gap-1">
         <div className="relative flex items-center">
           <Input
@@ -122,20 +114,30 @@ export function FindBar() {
             onChange={(e) => setFindQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Find"
-            className="h-8 w-52 border-0 pr-8 text-sm shadow-none focus-visible:ring-1"
+            className={cn(
+              "h-8 w-52 rounded-md border border-border bg-muted/50 pr-8 text-sm shadow-none focus-visible:ring-1",
+              findQuery &&
+                matches.length === 0 &&
+                "border-destructive/40 bg-destructive/10 text-destructive focus-visible:ring-destructive/40",
+            )}
           />
           <Button
             variant="ghost"
             size="icon"
             className="absolute right-0 size-7"
-            onClick={() => setCaseSensitive((v) => !v)}
+            onClick={() => setCaseSensitive(!caseSensitive)}
             title="Match case"
           >
             <CaseSensitive className={cn("size-4", caseSensitive && "text-primary")} />
           </Button>
         </div>
 
-        <span className="min-w-[60px] px-1 text-center text-muted-foreground text-xs tabular-nums">
+        <span
+          className={cn(
+            "min-w-[60px] px-1 text-center text-xs tabular-nums",
+            findQuery && matches.length === 0 ? "text-destructive" : "text-muted-foreground",
+          )}
+        >
           {matches.length > 0
             ? `${currentIndex + 1} of ${matches.length}`
             : findQuery
@@ -181,7 +183,7 @@ export function FindBar() {
             onChange={(e) => setReplacement(e.target.value)}
             placeholder={canReplace ? "Replace with" : "Read-only file"}
             disabled={!canReplace}
-            className="h-8 w-52 border-0 text-sm shadow-none focus-visible:ring-1"
+            className="h-8 w-52 rounded-md border border-border bg-muted/50 text-sm shadow-none focus-visible:ring-1"
           />
           <Button
             variant="ghost"

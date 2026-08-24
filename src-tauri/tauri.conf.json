@@ -23,6 +23,18 @@
       }
     ],
     "security": {
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$HOME/**",
+          "$DESKTOP/**",
+          "$DOCUMENT/**",
+          "$DOWNLOAD/**",
+          "$PICTURE/**",
+          "$VIDEO/**",
+          "$AUDIO/**"
+        ]
+      },
       "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost https://asset.localhost data: blob:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https://ipc.localhost"
     }
   },
@@ -50,5 +62,11 @@
         "mimeType": "text/plain"
       }
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDMyOTk5RThGQzY2RjZDRUIKUldUcmJHL0dqNTZaTXFiTVBWd0VDZlNBMFZjMm5XK0hsbi85Y3RpUTI1M2lBNnorUmdQbDlMRCsK",
+      "endpoints": ["https://github.com/kumixlabs/lightread/releases/latest/download/latest.json"]
+    }
   }
 }

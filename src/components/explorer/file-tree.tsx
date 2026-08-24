@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 import { FileTreeNode } from "@/components/explorer/file-tree-node";
 import { useStore } from "@/stores/app-store";
@@ -27,6 +27,32 @@ export function FileTree() {
   const tree = useStore((s) => s.workspace.tree);
   const loading = useStore((s) => s.workspace.loading);
   const fileSearch = useStore((s) => s.fileSearch);
+  const rootPath = useStore((s) => s.workspace.rootPath);
+  const activeTabId = useStore((s) => s.activeTabId);
+
+  // Switching tabs reveals the file in the tree: expand every ancestor dir.
+  useEffect(() => {
+    if (!rootPath || !activeTabId) return;
+    const root = rootPath.replace(/\\/g, "/").replace(/\/$/, "");
+    const file = activeTabId.replace(/\\/g, "/");
+    if (!file.startsWith(`${root}/`)) return;
+    const parts = file.slice(root.length + 1).split("/");
+    const ancestors: string[] = [];
+    for (let i = 1; i < parts.length; i++) {
+      ancestors.push(`${root}/${parts.slice(0, i).join("/")}`);
+    }
+    if (ancestors.length === 0) return;
+    useStore.setState((s) => {
+      const next = new Set(s.expandedDirs);
+      let added = false;
+      for (const a of ancestors)
+        if (!next.has(a)) {
+          next.add(a);
+          added = true;
+        }
+      return added ? { expandedDirs: next } : {};
+    });
+  }, [activeTabId, rootPath]);
 
   const filteredTree = useMemo(() => filterTree(tree, fileSearch), [tree, fileSearch]);
 
