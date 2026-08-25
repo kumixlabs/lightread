@@ -2,13 +2,20 @@
 
 All notable changes to LightRead will be documented in this file.
 
-## 0.1.4
+## 0.1.5 - 25-08-2026
+
+### Fixed
+
+- Single instance CLI arg parsing: slice argv[0] (binary executable path) so subsequent files/folders passed while app is running open properly in existing window.
+- Window focus on single-instance trigger: automatically unminimize, show, and focus LightRead window on external open requests.
+
+## 0.1.4 - 25-08-2026
 
 ### Fixed
 
 - Windows Explorer Context Menu registry root: changed `HKCR` to `SHCTX` (`Software\Classes\...`) and added `SHChangeNotify` reload trigger so "Open with LightRead" appears immediately in per-user installer setups.
 
-## 0.1.3
+## 0.1.3 - 25-08-2026
 
 ### Added
 

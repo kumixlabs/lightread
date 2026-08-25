@@ -2,7 +2,7 @@ mod filesystem;
 mod search;
 mod watchers;
 
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -12,8 +12,13 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         // File-association support: a second instance started by "Open with
-        // LightRead" forwards its argv to the running instance and exits.
+        // LightRead" forwards its argv to the running instance, focuses window, and exits.
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
             if let Err(e) = app.emit("single-instance", argv) {
                 log::warn!("failed to forward single-instance args: {e}");
             }

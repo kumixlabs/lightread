@@ -45,7 +45,7 @@ export default function App() {
       // 1. Check if launched with a file/folder arg ("Open with LightRead" cold start)
       try {
         const args = await getCliArgs();
-        const targetPath = args.find((a) => !a.startsWith("-") && !a.startsWith("/"));
+        const targetPath = args.find((a) => !a.startsWith("-"));
         if (targetPath) {
           const meta = await getFileMetadata(targetPath).catch(() => null);
           if (meta) {
@@ -85,7 +85,9 @@ export default function App() {
   useEffect(() => {
     let unlisten: (() => void) | undefined;
     listen<string[]>("single-instance", async (e) => {
-      const targetPath = e.payload.find((a) => !a.startsWith("-") && !a.startsWith("/"));
+      // argv from second instance includes binary path at index 0, so skip argv[0]
+      const args = e.payload.slice(1);
+      const targetPath = args.find((a) => !a.startsWith("-"));
       if (!targetPath) return;
       const meta = await getFileMetadata(targetPath).catch(() => null);
       if (meta?.is_dir) {
