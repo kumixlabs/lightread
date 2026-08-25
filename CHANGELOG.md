@@ -2,6 +2,13 @@
 
 All notable changes to LightRead will be documented in this file.
 
+## 0.1.7
+
+### Fixed
+
+- Audio/video playback blocked by CSP: added `media-src` directive (asset protocol + blob) so MP3/MP4 play in the built-in preview player instead of failing with a codec error.
+- Media error card now distinguishes codec-unsupported from load failures and offers "Open with default app" fallback.
+
 ## 0.1.6 - 25-08-2026
 
 ### Added
