@@ -1,6 +1,7 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { FileTreeNode } from "@/components/explorer/file-tree-node";
+import { readDirectory } from "@/lib/tauri-api";
 import { useStore } from "@/stores/app-store";
 import type { FileNode } from "@/types";
 
@@ -28,6 +29,26 @@ export function FileTree() {
   const loading = useStore((s) => s.workspace.loading);
   const fileSearch = useStore((s) => s.fileSearch);
   const rootPath = useStore((s) => s.workspace.rootPath);
+
+  // Lazy deep index: store tree is depth-1 (children expand lazily into local
+  // state, invisible to filterTree). Fetch full tree once, only when the user
+  // actually searches.
+  // ponytail: depth 8 like Quick Open; incremental FS index if this ever gets slow.
+  const [deepTree, setDeepTree] = useState<FileNode[] | null>(null);
+  useEffect(() => {
+    setDeepTree(null);
+  }, []);
+  useEffect(() => {
+    if (!fileSearch.trim() || !rootPath || deepTree) return;
+    let cancelled = false;
+    readDirectory(rootPath, 8)
+      .then((t) => !cancelled && setDeepTree(t))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [fileSearch, rootPath, deepTree]);
+  const searchTree = deepTree ?? tree;
   const activeTabId = useStore((s) => s.activeTabId);
 
   // Switching tabs reveals the file in the tree: expand every ancestor dir.
@@ -54,7 +75,7 @@ export function FileTree() {
     });
   }, [activeTabId, rootPath]);
 
-  const filteredTree = useMemo(() => filterTree(tree, fileSearch), [tree, fileSearch]);
+  const filteredTree = useMemo(() => filterTree(searchTree, fileSearch), [searchTree, fileSearch]);
 
   if (loading) {
     return (

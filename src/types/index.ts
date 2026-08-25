@@ -55,8 +55,10 @@ export interface Tab {
   file: LoadedFile;
   /** Live (possibly unsaved) content when the tab is editable. */
   draft?: string;
-  /** Rendered preview vs editable source for markdown tabs. */
+  /** Rendered preview vs editable source for markdown/html/svg tabs. */
   previewMode?: boolean;
+  /** Code viewer: highlighted view (default) vs plain-text edit surface. */
+  editMode?: boolean;
 }
 
 export interface RecentEntry {

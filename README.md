@@ -46,6 +46,10 @@ Grab the latest release for your platform from [GitHub Releases](https://github.
 | macOS (Apple Silicon / Intel) | `*.dmg` |
 | Linux | `*.AppImage` or `*.deb` |
 
+> **Linux audio/video preview**: relies on system GStreamer codecs. If MP3/MP4 fails to play, install them once:
+> `sudo apt install gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav`
+> (Windows and macOS use OS codecs — nothing to install.)
+
 > macOS builds are ad-hoc signed: on first launch, right-click the app → **Open**.
 
 ## Development

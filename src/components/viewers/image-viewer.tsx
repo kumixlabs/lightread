@@ -96,7 +96,7 @@ export function ImageViewer({ file }: ImageViewerProps) {
           >
             <ZoomOut className="size-4" />
           </button>
-          <span className="min-w-[3rem] text-center text-muted-foreground text-xs tabular-nums">
+          <span className="min-w-12 text-center text-muted-foreground text-xs tabular-nums">
             {Math.round(zoom * 100)}%
           </span>
           <button

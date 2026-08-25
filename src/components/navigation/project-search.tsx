@@ -128,7 +128,7 @@ export function ProjectSearch() {
           </span>
         </div>
 
-        <ScrollArea className="max-h-[400px]">
+        <ScrollArea className="max-h-100">
           <div className="py-1">
             {grouped.size === 0 && !loading && searched ? (
               <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
@@ -152,7 +152,7 @@ export function ProjectSearch() {
                       onClick={() => handleClickResult(match.path)}
                       className="flex w-full items-baseline gap-3 px-4 py-1.5 text-left transition-colors hover:bg-accent"
                     >
-                      <span className="min-w-[2.5rem] text-right font-mono text-muted-foreground/50 text-xs">
+                      <span className="min-w-10 text-right font-mono text-muted-foreground/50 text-xs">
                         {match.line}
                       </span>
                       <span className="truncate font-mono text-xs">{match.text.trim()}</span>

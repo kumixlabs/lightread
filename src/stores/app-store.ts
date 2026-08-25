@@ -15,6 +15,11 @@ import {
 import { basename } from "@/lib/utils";
 import type { AppSettings, FileNode, RecentEntry, Tab } from "@/types";
 
+// Path → time of our own write. Watcher events within the window are ours,
+// not external edits (debouncer fires ~500ms after the fs write).
+const selfWrites = new Map<string, number>();
+const SELF_WRITE_WINDOW_MS = 2000;
+
 interface PendingClose {
   tabIds: string[];
   /** Close the window after resolving (app exit flow). */
@@ -95,6 +100,7 @@ interface AppState {
   /** Save As: OS dialog, writes draft to a new path and retargets the tab. */
   saveTabAs: (tabId: string) => Promise<void>;
   setPreviewMode: (tabId: string, preview: boolean) => void;
+  setEditMode: (tabId: string, editing: boolean) => void;
   resolvePendingClose: (action: "save" | "discard" | "cancel") => Promise<void>;
   /** Intercept window close; prompts for unsaved tabs. */
   requestAppExit: () => Promise<void>;
@@ -316,6 +322,8 @@ export const useStore = create<AppState>()(
       },
 
       markFileChanged: (path: string) => {
+        const wrote = selfWrites.get(path);
+        if (wrote && Date.now() - wrote < SELF_WRITE_WINDOW_MS) return; // our own save
         const tab = get().tabs.find((t) => t.file.path === path);
         if (!tab) return;
         // Never auto-overwrite unsaved edits — surface the banner instead.
@@ -382,6 +390,7 @@ export const useStore = create<AppState>()(
         const tab = get().tabs.find((t) => t.id === tabId);
         if (!tab || !isDirty(tab)) return true;
         try {
+          selfWrites.set(tab.file.path, Date.now());
           await writeTextFile(tab.file.path, tab.draft!);
           set((state) => ({
             tabs: state.tabs.map((t) =>
@@ -416,6 +425,16 @@ export const useStore = create<AppState>()(
       saveTabAs: async (tabId: string) => {
         const tab = get().tabs.find((t) => t.id === tabId);
         if (!tab) return;
+        // Truncated/lossy content must not be silently written anywhere —
+        // the user would believe they saved the full file.
+        if (tab.file.truncated || tab.file.lossy) {
+          set({
+            fileError: `Save As unavailable for ${tab.file.name}: file is ${
+              tab.file.truncated ? "truncated" : "not valid UTF-8"
+            }. Original bytes stay untouched.`,
+          });
+          return;
+        }
         const nextPath = await pickSavePath(tab.file.name);
         if (!nextPath) return;
         const contents = tab.draft ?? tab.file.content;
@@ -424,7 +443,7 @@ export const useStore = create<AppState>()(
         const file = { ...tab.file, path: nextPath, name: basename(nextPath), content: contents };
         set((state) => ({
           tabs: state.tabs.map((t) =>
-            t.id === tabId ? { ...t, id: nextPath, file, draft: undefined, lossy: undefined } : t,
+            t.id === tabId ? { ...t, id: nextPath, file, draft: undefined } : t,
           ),
           activeTabId: state.activeTabId === tabId ? nextPath : state.activeTabId,
         }));
@@ -439,6 +458,11 @@ export const useStore = create<AppState>()(
       setPreviewMode: (tabId: string, preview: boolean) => {
         set((state) => ({
           tabs: state.tabs.map((t) => (t.id === tabId ? { ...t, previewMode: preview } : t)),
+        }));
+      },
+      setEditMode: (tabId: string, editing: boolean) => {
+        set((state) => ({
+          tabs: state.tabs.map((t) => (t.id === tabId ? { ...t, editMode: editing } : t)),
         }));
       },
 

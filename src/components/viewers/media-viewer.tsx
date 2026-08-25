@@ -52,8 +52,8 @@ export function MediaViewer({ file }: MediaViewerProps) {
               const code = e.currentTarget.error?.code;
               setError(
                 code === 4
-                  ? "The audio/video codec is not supported by the built-in player (e.g. MKV, AVI, WMV)."
-                  : "Failed to load or decode this file.",
+                  ? `Source not supported or failed to load (code 4). Usually: codec missing (MKV/AVI/WMV on this OS) or the file could not be read.`
+                  : `Failed to load or decode this file (code ${code ?? "?"}).`,
               );
             }}
             className="max-h-full max-w-full"
@@ -70,8 +70,8 @@ export function MediaViewer({ file }: MediaViewerProps) {
                 const code = e.currentTarget.error?.code;
                 setError(
                   code === 4
-                    ? "The audio codec is not supported by the built-in player."
-                    : "Failed to load or decode this file.",
+                    ? "Source not supported or failed to load (code 4). Usually: codec missing or the file could not be read."
+                    : `Failed to load or decode this file (code ${code ?? "?"}).`,
                 );
               }}
               className="w-full"

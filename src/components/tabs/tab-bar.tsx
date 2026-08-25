@@ -5,6 +5,7 @@ import {
   FileImage,
   FileText,
   FileVideo,
+  FileVolume2,
   FileWarning,
   Globe,
   type LucideIcon,
@@ -20,6 +21,7 @@ import {
 } from "@kumix/ui/ui/context-menu";
 import { ScrollArea, ScrollBar } from "@kumix/ui/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@kumix/ui/ui/tooltip";
+import { AUDIO_EXTENSIONS } from "@/lib/file-types/registry";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/stores/app-store";
 import type { LoadedFile } from "@/types";
@@ -37,7 +39,7 @@ function getFileIcon(file: LoadedFile): LucideIcon {
     case "svg":
       return FileImage;
     case "media":
-      return FileVideo;
+      return AUDIO_EXTENSIONS.has(file.extension.toLowerCase()) ? FileVolume2 : FileVideo;
     case "html":
       return Globe;
     case "unsupported":

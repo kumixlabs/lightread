@@ -25,8 +25,16 @@ export function StatusBar() {
   const file = activeTab?.file;
   const content = activeTab ? (activeTab.draft ?? activeTab.file.content) : "";
 
-  const lineCount = useMemo(() => (content ? content.split("\n").length : 0), [content]);
-  const wordCount = useMemo(() => (content ? (content.match(/\S+/g) ?? []).length : 0), [content]);
+  // Skip per-keystroke full scans on huge content — they freeze the UI.
+  const stats = useMemo(() => {
+    if (!content) return { lines: 0, words: 0, big: false };
+    if (content.length > 1_000_000) return { lines: 0, words: 0, big: true };
+    return {
+      lines: content.split("\n").length,
+      words: content.match(/\S+/g)?.length ?? 0,
+      big: false,
+    };
+  }, [content]);
 
   const cycleTheme = () => {
     const next = THEME_CYCLE[(THEME_CYCLE.indexOf(theme) + 1) % THEME_CYCLE.length];
@@ -72,13 +80,16 @@ export function StatusBar() {
       {file.language && (
         <span className="shrink-0 font-medium text-foreground/70">{file.language}</span>
       )}
-      {lineCount > 0 && (
-        <span className="shrink-0 tabular-nums">{lineCount.toLocaleString()} lines</span>
+      {stats.lines > 0 && (
+        <span className="shrink-0 tabular-nums">{stats.lines.toLocaleString()} lines</span>
       )}
+      {stats.big && <span className="shrink-0 tabular-nums">1M+ chars</span>}
       {(file.viewerType === "text" || file.viewerType === "markdown") && (
         <>
           <span className="shrink-0 tabular-nums">
-            {wordCount.toLocaleString()} words, {content.length.toLocaleString()} chars
+            {stats.big
+              ? `${Math.round(content.length / 1000).toLocaleString()}k chars`
+              : `${stats.words.toLocaleString()} words, ${content.length.toLocaleString()} chars`}
           </span>
           <span className="shrink-0 tabular-nums">
             Ln {cursor.line}, Col {cursor.col}

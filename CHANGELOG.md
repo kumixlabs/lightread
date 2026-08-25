@@ -2,6 +2,32 @@
 
 All notable changes to LightRead will be documented in this file.
 
+## 0.1.9 - 26-08-2026
+
+### Fixed
+
+- **Non-UTF8 files no longer editable**: files decoded lossily (replacement chars) are now read-only in the editor — editing + saving would permanently corrupt the original bytes.
+- **Save As guard**: Save As is blocked for truncated (>10MB) or lossy files — the new file would silently contain only partial/corrupted content. Original bytes stay untouched; an error banner explains.
+- **Self-save watcher false positive**: saving a file no longer triggers the "file changed on disk" banner moments later — own writes are now distinguished from external changes.
+- **Sidebar search depth**: sidebar file search now covers the full project tree (depth ≤ 8), not just the top levels.
+- **Status bar freeze on large files**: word/line counting is skipped for 1M+ character content (shows approximate char count instead).
+- **Quick Open selection reset**: selection index resets whenever the filtered list changes, not only on mount.
+- **Markdown image path guard**: `..` in relative image paths can no longer pop past the drive root.
+- **Code viewer edit mode persists**: switching tabs no longer resets the Edit/View toggle in the code viewer.
+
+### Changed
+
+- **File tree icons**: audio files (`FileVolume2`, fuchsia), video (`FileVideo`, rose), CSV/TSV (`Table2`, emerald) — in explorer tree and tab bar (audio vs video distinguished).
+- **Media error message**: now states the generic cause (codec missing or unreadable) instead of only blaming codecs, with the error code included.
+
+### Removed
+
+- Dead `matlab` entry in file-type registry (`.m` always matched `objective-c` first).
+
+### Docs
+
+- README: one-line GStreamer codec install note for Linux audio/video preview.
+
 ## 0.1.8 - 25-08-2026
 
 ### Fixed

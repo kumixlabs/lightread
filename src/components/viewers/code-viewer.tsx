@@ -5,6 +5,7 @@ import type { Highlighter } from "shiki";
 import { TextEditor } from "@/components/viewers/text-editor";
 import { CORE_LANGS, ensureLang, ensureTheme, getHighlighter } from "@/lib/shiki";
 import { cn } from "@/lib/utils";
+import { useStore } from "@/stores/app-store";
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -44,7 +45,15 @@ export function CodeViewer({
   const [themeReady, setThemeReady] = useState(true);
   const [highlightFailed, setHighlightFailed] = useState(false);
   const [langReady, setLangReady] = useState(true);
-  const [editing, setEditing] = useState(false);
+  // Edit mode persists per tab — survives viewer remounts on tab switch.
+  const editMode = useStore((s) =>
+    tabId ? (s.tabs.find((t) => t.id === tabId)?.editMode ?? false) : false,
+  );
+  const setEditMode = useStore((s) => s.setEditMode);
+  const editing = editMode;
+  const setEditing = (v: boolean) => {
+    if (tabId) setEditMode(tabId, v);
+  };
   const copyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   // View mode shows the draft (unsaved edits) so it never lags behind edits.
   const displayContent = draft ?? content;

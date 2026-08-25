@@ -73,7 +73,7 @@ export function ViewerRouter() {
             tabId={activeTab.id}
             content={activeTab.draft ?? file.content}
             onCursor={setCursor}
-            readOnly={!!file.truncated}
+            readOnly={!!file.truncated || !!file.lossy}
           />
         );
       case "code": {
@@ -101,7 +101,7 @@ export function ViewerRouter() {
             codeTheme={settings.codeTheme}
             tabId={activeTab.id}
             draft={activeTab.draft}
-            readOnly={!!file.truncated}
+            readOnly={!!file.truncated || !!file.lossy}
             onCursor={setCursor}
           />
         );
@@ -114,7 +114,7 @@ export function ViewerRouter() {
             tabId={activeTab.id}
             fontSize={settings.fontSize}
             onCursor={setCursor}
-            readOnly={!!file.truncated}
+            readOnly={!!file.truncated || !!file.lossy}
           />
         );
       case "image":
@@ -127,7 +127,7 @@ export function ViewerRouter() {
             content={file.content}
             tabId={activeTab.id}
             draft={activeTab.draft}
-            readOnly={!!file.truncated}
+            readOnly={!!file.truncated || !!file.lossy}
             onCursor={setCursor}
           />
         );
@@ -137,7 +137,7 @@ export function ViewerRouter() {
             content={file.content}
             tabId={activeTab.id}
             draft={activeTab.draft}
-            readOnly={!!file.truncated}
+            readOnly={!!file.truncated || !!file.lossy}
             onCursor={setCursor}
           />
         );

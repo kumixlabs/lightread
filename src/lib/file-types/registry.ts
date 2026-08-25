@@ -308,7 +308,6 @@ export const FILE_TYPES: FileTypeDefinition[] = [
     language: "apex",
     viewer: "code",
   },
-  { id: "matlab", extensions: [".m"], category: "code", language: "matlab", viewer: "code" },
   {
     id: "handlebars",
     extensions: [".hbs", ".handlebars"],
@@ -508,7 +507,7 @@ const BINARY_EXTENSIONS = new Set([
 
 // ponytail: WebView2/WebKit ship their own codec sets (mp4/h264/aac/mp3/webm OK;
 // mkv/avi/flv often fail) — unsupported ones fall back to an error card in the player.
-const AUDIO_EXTENSIONS = new Set([
+export const AUDIO_EXTENSIONS = new Set([
   ".mp3",
   ".wav",
   ".flac",

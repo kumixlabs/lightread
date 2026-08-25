@@ -34,7 +34,7 @@ export function WelcomeScreen() {
   const hasRecents = recentDirs.length > 0 || recentFiles.length > 0;
 
   return (
-    <div className="flex h-full flex-col items-center justify-center overflow-auto bg-gradient-to-b from-background to-muted/30 p-8">
+    <div className="flex h-full flex-col items-center justify-center overflow-auto bg-linear-to-b from-background to-muted/30 p-8">
       <h1 className="font-bold text-4xl tracking-tight">LightRead</h1>
       <p className="mt-1.5 text-base text-muted-foreground">Read. Edit. Preview. Nothing Else.</p>
 

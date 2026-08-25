@@ -162,8 +162,10 @@ export function MarkdownViewer({ file, tabId, draft, previewMode }: MarkdownView
           parts.pop();
           for (const p of src.replace(/\\/g, "/").split("/")) {
             if (!p || p === ".") continue;
-            if (p === "..") parts.pop();
-            else parts.push(p);
+            if (p === "..") {
+              // Guard: never pop past the drive root / first segment.
+              if (parts.length > 1) parts.pop();
+            } else parts.push(p);
           }
           url = convertFileSrc(parts.join("/"));
         }
