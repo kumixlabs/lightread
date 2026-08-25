@@ -68,18 +68,6 @@
 
 /* rehype-highlight removed; no .hljs users left */
 
-.prose-custom h1 {
-  scroll-margin-top: 3.5rem;
-}
-
-.prose-custom h2 {
-  scroll-margin-top: 3.5rem;
-}
-
-.prose-custom h3 {
-  scroll-margin-top: 3.5rem;
-}
-
 @keyframes fade-in {
   from {
     opacity: 0;

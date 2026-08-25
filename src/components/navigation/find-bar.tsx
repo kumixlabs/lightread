@@ -5,7 +5,6 @@ import { Button } from "@kumix/ui/ui/button";
 import { Input } from "@kumix/ui/ui/input";
 import { cn, findMatches } from "@/lib/utils";
 import { useStore } from "@/stores/app-store";
-import { isEditable } from "@/types";
 
 export function FindBar() {
   const findOpen = useStore((s) => s.findOpen);
@@ -26,9 +25,11 @@ export function FindBar() {
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
   const content = activeTab ? (activeTab.draft ?? activeTab.file.content) : "";
+  // Replace works on the plain-text editing surface — every text-based viewer
+  // (code/html/svg/csv source included) edits via updateDraft.
   const canReplace =
     !!activeTab &&
-    isEditable(activeTab.file.viewerType) &&
+    !["image", "media", "unsupported"].includes(activeTab.file.viewerType) &&
     !activeTab.file.lossy &&
     !activeTab.file.truncated;
 
@@ -134,7 +135,7 @@ export function FindBar() {
 
         <span
           className={cn(
-            "min-w-[60px] px-1 text-center text-xs tabular-nums",
+            "min-w-15 px-1 text-center text-xs tabular-nums",
             findQuery && matches.length === 0 ? "text-destructive" : "text-muted-foreground",
           )}
         >

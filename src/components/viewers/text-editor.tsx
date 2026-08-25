@@ -90,7 +90,7 @@ export function TextEditor({ tabId, content, onCursor, readOnly, className }: Te
         <mark
           key={start}
           data-current={i === findIndex || undefined}
-          className="rounded-[2px] bg-yellow-300/40 text-transparent data-current:bg-primary/70 dark:bg-yellow-500/30"
+          className="rounded-xs bg-yellow-300/40 text-transparent data-current:bg-primary/70 dark:bg-yellow-500/30"
         >
           {content.slice(start, end)}
         </mark>,
@@ -126,6 +126,7 @@ export function TextEditor({ tabId, content, onCursor, readOnly, className }: Te
       )}
       <textarea
         ref={ref}
+        data-viewer-content
         value={content}
         onChange={(e) => {
           updateDraft(tabId, e.target.value);

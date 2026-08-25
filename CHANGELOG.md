@@ -2,7 +2,31 @@
 
 All notable changes to LightRead will be documented in this file.
 
-## 0.1.7
+## 0.1.8 - 25-08-2026
+
+### Fixed
+
+- **Save-failure data loss**: closing an unsaved tab whose save failed no longer drops the tab — close aborts, tab + draft stay open, error banner explains why.
+- **Find scroll**: find-bar now scrolls the actual viewer scroll container (code viewer, text editor, markdown, csv) instead of a non-scrolling wrapper.
+- **Markdown relative images**: `![](./img.png)` / `../` paths resolve against the markdown file's directory.
+- **Quick Open depth**: searches the full project tree (depth ≤ 8, ignored dirs skipped) instead of only 2 levels.
+- **Quick Open selection**: stale index after re-filtering no longer makes Enter a silent no-op.
+- **Watcher orphans**: switching workspace folders restarts file watches for still-open tabs.
+- **Replace gate**: find & replace now works for all text-based viewers (code, HTML/SVG source, CSV source), not just `.txt`/`.md`.
+- **HTML/SVG mode persistence**: Preview/Source choice survives tab switches.
+- **Asset scope race**: scope grant now awaits before file load.
+- **Atomic save**: writes go to a temp file then rename — a crash mid-save never truncates the original.
+- **Markdown URL safety**: default react-markdown URL sanitization restored (removes identity `urlTransform`).
+
+### Removed
+
+- Dead `TextViewer` component + unused `.prose-custom` CSS.
+
+### Docs
+
+- AGENTS.md: version reference now points to `package.json` as single source of truth.
+
+## 0.1.7 - 25-08-2026
 
 ### Fixed
 

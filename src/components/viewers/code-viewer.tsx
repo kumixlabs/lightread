@@ -181,6 +181,7 @@ export function CodeViewer({
       )}
       <div
         className={cn("h-full overflow-auto", wordWrap ? "overflow-x-hidden" : "overflow-x-auto")}
+        data-viewer-content
       >
         <pre
           className="min-w-full py-3 font-mono leading-[1.65]"

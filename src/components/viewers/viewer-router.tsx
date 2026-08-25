@@ -147,7 +147,7 @@ export function ViewerRouter() {
   };
 
   return (
-    <div className="flex h-full flex-col bg-background" data-viewer-content>
+    <div className="flex h-full flex-col bg-background">
       {saveError && (
         <div className="flex items-center gap-2 border-red-500/30 border-b bg-red-500/10 px-4 py-2 text-[13px] text-red-700 dark:text-red-400">
           <AlertTriangle className="size-3.5 shrink-0" />

@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 
 import { Dialog, DialogContent } from "@kumix/ui/ui/dialog";
 import { Input } from "@kumix/ui/ui/input";
+import { readDirectory } from "@/lib/tauri-api";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/stores/app-store";
 import type { FileNode } from "@/types";
@@ -60,9 +61,25 @@ export function QuickOpen() {
     }
   }, [open]);
 
+  // Deep index: workspace.tree is depth-1 (lazy); quick open needs the full
+  // tree. Rust skips ignored dirs (.git, node_modules...).
+  // ponytail: depth 8 covers real projects; incremental FS index if this ever gets slow.
+  const [deepTree, setDeepTree] = useState<FileNode[] | null>(null);
+  useEffect(() => {
+    setDeepTree(null);
+    if (!open || !rootPath) return;
+    let cancelled = false;
+    readDirectory(rootPath, 8)
+      .then((t) => !cancelled && setDeepTree(t))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [open, rootPath]);
+
   const items = useMemo(() => {
     if (rootPath && tree.length > 0) {
-      return flattenTree(tree).map((f) => ({
+      return flattenTree(deepTree ?? tree).map((f) => ({
         path: f.path,
         name: f.name,
         relPath: rootName
@@ -75,7 +92,7 @@ export function QuickOpen() {
     return recents
       .filter((r) => !r.isDir)
       .map((r) => ({ path: r.path, name: r.name, relPath: r.name }));
-  }, [tree, rootPath, rootName, recents]);
+  }, [deepTree, tree, rootPath, rootName, recents]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return items.slice(0, 50);
@@ -89,6 +106,7 @@ export function QuickOpen() {
       .slice(0, 50);
   }, [items, query]);
 
+  // Query changed → filtered list changed → stale selection would pick the wrong file.
   useEffect(() => {
     setSelectedIndex(0);
   }, []);
@@ -111,7 +129,8 @@ export function QuickOpen() {
       setSelectedIndex((i) => Math.max(i - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      select(filtered[selectedIndex]);
+      // Clamp: stale index after filtering would be undefined → silent no-op.
+      select(filtered[Math.min(selectedIndex, filtered.length - 1)]);
     }
   };
 

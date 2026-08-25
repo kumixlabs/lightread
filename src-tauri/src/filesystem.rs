@@ -102,7 +102,13 @@ pub fn read_text_file_lossy(path: String) -> Result<String, String> {
 
 #[tauri::command]
 pub fn write_text_file(path: String, contents: String) -> Result<(), String> {
-    std::fs::write(Path::new(&path), contents.as_bytes()).map_err(|e| e.to_string())
+    // Write-then-rename: a crash mid-write never truncates the original file.
+    let tmp = format!("{path}.lightread.tmp");
+    std::fs::write(&tmp, contents.as_bytes()).map_err(|e| e.to_string())?;
+    std::fs::rename(&tmp, &path).map_err(|e| {
+        let _ = std::fs::remove_file(&tmp);
+        e.to_string()
+    })
 }
 
 #[tauri::command]

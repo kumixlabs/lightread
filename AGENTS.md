@@ -6,7 +6,7 @@
 - `bun tauri build` — production build
 
 # Architecture
-- Product: LightRead 0.1.0 (docs reader/editor, PRD: LightRead-PRD.md).
+- Product: LightRead — docs reader/editor (PRD: LightRead-PRD.md). Version source of truth: `package.json` (keep `src-tauri/tauri.conf.json` + `src-tauri/Cargo.toml` in sync on release).
 - State: zustand store at src/stores/app-store.ts (persisted: settings, recents, session tab paths)
 - File type detection: src/lib/file-types/registry.ts
 - Tauri API wrapper: src/lib/tauri-api.ts

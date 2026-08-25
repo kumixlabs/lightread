@@ -90,7 +90,7 @@ interface AppState {
 
   /** Editing */
   updateDraft: (tabId: string, content: string) => void;
-  saveTab: (tabId: string) => Promise<void>;
+  saveTab: (tabId: string) => Promise<boolean>;
   saveActiveTab: () => Promise<void>;
   /** Save As: OS dialog, writes draft to a new path and retargets the tab. */
   saveTabAs: (tabId: string) => Promise<void>;
@@ -157,12 +157,17 @@ export const useStore = create<AppState>()(
         set({ workspace: { rootPath: null, rootName: null, tree: [], loading: true } });
         try {
           await stopAllWatches();
-          grantAssetScope(path, true).catch(() => {});
+          // Await before reading so any first image render is authorized (no race).
+          await grantAssetScope(path, true).catch(() => {});
           const tree = await readDirectory(path);
           set({
             workspace: { rootPath: path, rootName: basename(path), tree, loading: false },
             expandedDirs: new Set([path]),
           });
+          // Watches were stopped globally; restart for tabs that stay open.
+          for (const t of get().tabs) {
+            startFileWatch(t.file.path).catch(() => {});
+          }
           get().addRecent({ path, name: basename(path), isDir: true, openedAt: Date.now() });
         } catch (e) {
           set((state) => ({
@@ -180,7 +185,8 @@ export const useStore = create<AppState>()(
         }
         set({ fileLoading: true, fileError: null });
         try {
-          grantAssetScope(path, false).catch(() => {});
+          // Await first: authorize asset scope before the file viewer renders.
+          await grantAssetScope(path, false).catch(() => {});
           const file = await loadFile(path);
           const tab: Tab = {
             id: path,
@@ -374,7 +380,7 @@ export const useStore = create<AppState>()(
 
       saveTab: async (tabId: string) => {
         const tab = get().tabs.find((t) => t.id === tabId);
-        if (!tab || !isDirty(tab)) return;
+        if (!tab || !isDirty(tab)) return true;
         try {
           await writeTextFile(tab.file.path, tab.draft!);
           set((state) => ({
@@ -394,9 +400,11 @@ export const useStore = create<AppState>()(
             ),
             fileError: null,
           }));
+          return true;
         } catch (e) {
           // Keep dirty state — never lose user input.
           set({ fileError: `Failed to save ${tab.file.name}: ${String(e)}` });
+          return false;
         }
       },
 
@@ -442,12 +450,13 @@ export const useStore = create<AppState>()(
 
         if (action === "save") {
           for (const id of pending.tabIds) {
-            await get().saveTab(id);
+            // Save failed → abort the close entirely. Tabs stay open with
+            // drafts intact; the error banner shows why.
+            if (!(await get().saveTab(id))) return;
           }
         }
 
-        // Drop tabs (save failures keep content on disk-safe side: tab already
-        // saved or discarded by explicit choice).
+        // Drop tabs (only reached when every save succeeded or user chose discard).
         for (const id of pending.tabIds) {
           const tab = get().tabs.find((t) => t.id === id);
           if (tab) stopFileWatch(tab.file.path).catch(() => {});

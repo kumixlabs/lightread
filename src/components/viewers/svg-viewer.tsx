@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Code2, Eye } from "lucide-react";
 
 import { CodeViewer } from "@/components/viewers/code-viewer";
@@ -15,7 +14,15 @@ interface SvgViewerProps {
 
 export function SvgViewer({ content, tabId, draft, readOnly, onCursor }: SvgViewerProps) {
   const settings = useStore((s) => s.settings);
-  const [mode, setMode] = useState<"source" | "preview">("preview");
+  // Preview/Source mode persists per tab (survives remounts on tab switch).
+  const previewMode = useStore((s) =>
+    tabId ? (s.tabs.find((t) => t.id === tabId)?.previewMode ?? true) : true,
+  );
+  const setPreviewMode = useStore((s) => s.setPreviewMode);
+  const mode: "preview" | "source" = previewMode ? "preview" : "source";
+  const setMode = (m: "preview" | "source") => {
+    if (tabId) setPreviewMode(tabId, m === "preview");
+  };
 
   return (
     <div className="flex h-full flex-col bg-background">
