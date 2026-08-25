@@ -15,6 +15,7 @@ A lightweight document reader & editor for Windows, macOS, and Linux. Think Wind
 - **Pretty JSON** — minified JSON is indented on display.
 - **CSV/TSV tables** — sticky header, delimiter auto-detect.
 - **Images / SVG / HTML** — zoomable images, sandboxed previews (no script execution).
+- **Audio / video preview** — MP3, WAV, FLAC, M4A, MP4, WebM, MOV (+ MKV/AVI best-effort) play in-tab via native controls; clear error card when a codec is unsupported. Preview-only — no playlists, no library.
 - **Large files** — over 10 MB open truncated & read-only; over 100 MB refused.
 
 ### Editing

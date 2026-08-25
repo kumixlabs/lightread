@@ -4,6 +4,7 @@ import {
   FileCode2,
   FileImage,
   FileText,
+  FileVideo,
   FileWarning,
   Globe,
   type LucideIcon,
@@ -35,6 +36,8 @@ function getFileIcon(file: LoadedFile): LucideIcon {
     case "image":
     case "svg":
       return FileImage;
+    case "media":
+      return FileVideo;
     case "html":
       return Globe;
     case "unsupported":

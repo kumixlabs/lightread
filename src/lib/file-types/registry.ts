@@ -506,7 +506,9 @@ const BINARY_EXTENSIONS = new Set([
   ".iso",
 ]);
 
-const AUDIO_UNSUPPORTED_EXTENSIONS = new Set([
+// ponytail: WebView2/WebKit ship their own codec sets (mp4/h264/aac/mp3/webm OK;
+// mkv/avi/flv often fail) — unsupported ones fall back to an error card in the player.
+const AUDIO_EXTENSIONS = new Set([
   ".mp3",
   ".wav",
   ".flac",
@@ -515,13 +517,21 @@ const AUDIO_UNSUPPORTED_EXTENSIONS = new Set([
   ".wma",
   ".m4a",
   ".opus",
+]);
+
+const VIDEO_EXTENSIONS = new Set([
   ".mp4",
+  ".m4v",
   ".mov",
+  ".webm",
   ".avi",
   ".mkv",
-  ".webm",
   ".flv",
   ".wmv",
+  ".mpg",
+  ".mpeg",
+  ".ts",
+  ".3gp",
 ]);
 const IMAGE_EXTENSIONS = new Set([
   ".png",
@@ -582,7 +592,16 @@ export function detectFileType(filename: string): FileTypeDefinition {
     return { id: "image", extensions: [ext], category: "image", viewer: "image" };
   }
 
-  if (AUDIO_UNSUPPORTED_EXTENSIONS.has(ext) || BINARY_EXTENSIONS.has(ext)) {
+  if (AUDIO_EXTENSIONS.has(ext) || VIDEO_EXTENSIONS.has(ext)) {
+    return {
+      id: VIDEO_EXTENSIONS.has(ext) ? "video" : "audio",
+      extensions: [ext],
+      category: "media",
+      viewer: "media",
+    };
+  }
+
+  if (BINARY_EXTENSIONS.has(ext)) {
     return { id: "unsupported", extensions: [ext], category: "unsupported", viewer: "unsupported" };
   }
 

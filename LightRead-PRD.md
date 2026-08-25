@@ -298,6 +298,7 @@ A single registry decides, per filename, the `viewerType`:
 | `csv`         | Table view (read-only)                    | No       |
 | `image`       | Image viewer (zoom/fit)                   | No       |
 | `svg`         | Preview ↔ Source                          | No       |
+| `media`       | Native `<audio>`/`<video>` preview player  | No       |
 | `html`        | Sandboxed preview ↔ Source                | No       |
 | `unsupported` | Message + open-with-default-app action    | No       |
 
@@ -305,8 +306,8 @@ Detection order:
 
 1.  Exact-name map (Dockerfile, Makefile, dotfiles).
 2.  Extension map.
-3.  Fallbacks: known image/media ext → viewer; otherwise binary sniff →
-    `unsupported`; else `text`.
+3.  Fallbacks: known image ext → `image` viewer; known audio/video ext →
+    `media` viewer; otherwise binary sniff → `unsupported`; else `text`.
 
 **Editable set** = `markdown` + `text` (see §14).
 
@@ -744,8 +745,8 @@ src-tauri/src/
 5.  Local image in Markdown preview displays; relative link to another
     file opens that file in a tab; `https://` links open externally.
 6.  Code files open read-only with highlighting; typing does nothing.
-7.  No terminal, media player, or module switcher anywhere in the UI or
-    bundle.
+7.  No terminal, media player library, or module switcher anywhere in UI
+    bundle. (Audio/video preview playback is allowed — see §11.)
 8.  External edit with no local changes reloads automatically; with
     local changes, banner appears.
 9.  All shortcuts in §27 work.
@@ -770,10 +771,12 @@ src-tauri/src/
     conflicts never silently overwrite.
 7.  **Keep permissions minimal** (capabilities file). Adding a
     permission requires justification in the PR.
-8.  **No terminal, media player, or module switcher.** Do not add them
-    back; reject features that require them.
-9.  **Media is preview-only** — that means images. No audio/video
-    playback.
+8.  **No terminal, media player library, or module switcher.** Do not add
+    them back; reject features that require them. (Basic `<audio>`/`<video>`
+    preview playback is fine.)
+9.  **Media is preview-only** — images, audio, and video open in a basic
+    preview player (native `<audio>`/`<video>`, autoplay, codec-unsupported
+    error card). No playlists, no library, no equalizer.
 10. Keep dependencies from growing: no new runtime dependency unless
     stdlib/platform truly cannot do it.
 

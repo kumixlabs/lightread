@@ -7,6 +7,7 @@ import { CsvViewer } from "@/components/viewers/csv-viewer";
 import { HtmlViewer } from "@/components/viewers/html-viewer";
 import { ImageViewer } from "@/components/viewers/image-viewer";
 import { MarkdownViewer } from "@/components/viewers/markdown-viewer";
+import { MediaViewer } from "@/components/viewers/media-viewer";
 import { SvgViewer } from "@/components/viewers/svg-viewer";
 import { TextEditor } from "@/components/viewers/text-editor";
 import { UnsupportedViewer } from "@/components/viewers/unsupported-viewer";
@@ -118,6 +119,8 @@ export function ViewerRouter() {
         );
       case "image":
         return <ImageViewer file={file} />;
+      case "media":
+        return <MediaViewer file={file} />;
       case "svg":
         return (
           <SvgViewer

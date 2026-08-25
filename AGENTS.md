@@ -24,4 +24,4 @@
 - Never lose user input: save errors keep dirty state; external-change conflicts prompt, never silently overwrite.
 - Keep Tauri permissions minimal (see src-tauri/capabilities/default.json).
 - Highlighting: shared Shiki instance at src/lib/shiki.ts (lazy lang loading, GitHub themes). Used across code viewer and markdown preview code blocks.
-- Media: images via Tauri asset protocol (`security.assetProtocol.enable: true`). No audio/video playback.
+- Media: images via Tauri asset protocol (`security.assetProtocol.enable: true`). Audio/video playback via native `<video>`/`<audio>` tags through the same asset protocol (no third-party player deps).

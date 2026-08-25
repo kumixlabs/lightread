@@ -6,6 +6,7 @@ export type FileCategory =
   | "image"
   | "svg"
   | "html"
+  | "media"
   | "unsupported";
 
 export type ViewerType =
@@ -16,6 +17,7 @@ export type ViewerType =
   | "svg"
   | "html"
   | "csv"
+  | "media"
   | "unsupported";
 
 export interface FileTypeDefinition {

@@ -124,7 +124,10 @@ export async function loadFile(path: string): Promise<LoadedFile> {
   const typeDef = detectFileType(name);
   const meta = await getFileMetadata(path);
 
-  if (meta.is_binary && typeDef.category !== "image" && typeDef.category !== "svg") {
+  const isStreamable =
+    typeDef.category === "image" || typeDef.category === "svg" || typeDef.category === "media";
+
+  if (meta.is_binary && !isStreamable) {
     return {
       path,
       name,
@@ -137,7 +140,7 @@ export async function loadFile(path: string): Promise<LoadedFile> {
     };
   }
 
-  if (typeDef.viewer === "image") {
+  if (typeDef.viewer === "image" || typeDef.viewer === "media") {
     return {
       path,
       name,

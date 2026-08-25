@@ -2,6 +2,12 @@
 
 All notable changes to LightRead will be documented in this file.
 
+## 0.1.6 - 25-08-2026
+
+### Added
+
+- Audio & video playback: MP3/WAV/FLAC/AAC/OGG/M4A and MP4/WebM/MOV (+MKV/AVI best-effort) open in a built-in player with native controls, autoplay, and a clear error card when a codec is unsupported.
+
 ## 0.1.5 - 25-08-2026
 
 ### Fixed
