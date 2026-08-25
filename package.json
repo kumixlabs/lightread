@@ -1,7 +1,7 @@
 {
   "name": "lightread",
   "private": true,
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A lightweight document reader & editor built with Tauri 2, React, TypeScript, shadcn/ui, and Tailwind CSS.",
   "author": "Kumix Labs <hai@kumix.io>",
   "license": "MIT",

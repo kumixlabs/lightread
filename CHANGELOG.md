@@ -2,6 +2,12 @@
 
 All notable changes to LightRead will be documented in this file.
 
+## 0.1.4
+
+### Fixed
+
+- Windows Explorer Context Menu registry root: changed `HKCR` to `SHCTX` (`Software\Classes\...`) and added `SHChangeNotify` reload trigger so "Open with LightRead" appears immediately in per-user installer setups.
+
 ## 0.1.3
 
 ### Added
