@@ -51,6 +51,8 @@ pub fn run() {
             filesystem::read_directory,
             filesystem::get_file_metadata,
             filesystem::file_exists,
+            filesystem::get_cli_args,
+            filesystem::grant_asset_scope,
             watchers::start_file_watch,
             watchers::stop_file_watch,
             watchers::stop_all_watches,

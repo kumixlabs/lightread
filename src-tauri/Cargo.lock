@@ -2168,7 +2168,7 @@ dependencies = [
 
 [[package]]
 name = "lightread"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "log",
  "notify 8.2.0",

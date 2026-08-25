@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import {
+  grantAssetScope,
   loadFile,
   pickSavePath,
   readDirectory,
@@ -156,6 +157,7 @@ export const useStore = create<AppState>()(
         set({ workspace: { rootPath: null, rootName: null, tree: [], loading: true } });
         try {
           await stopAllWatches();
+          grantAssetScope(path, true).catch(() => {});
           const tree = await readDirectory(path);
           set({
             workspace: { rootPath: path, rootName: basename(path), tree, loading: false },
@@ -178,6 +180,7 @@ export const useStore = create<AppState>()(
         }
         set({ fileLoading: true, fileError: null });
         try {
+          grantAssetScope(path, false).catch(() => {});
           const file = await loadFile(path);
           const tab: Tab = {
             id: path,

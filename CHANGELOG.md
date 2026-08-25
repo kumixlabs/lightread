@@ -2,6 +2,18 @@
 
 All notable changes to LightRead will be documented in this file.
 
+## 0.1.3
+
+### Added
+
+- Windows Explorer Context Menu: "Open with LightRead" on right-clicking any file, folder, or folder background (registered via NSIS installer hooks).
+- Cold-start & single-instance CLI argument support: opening files/folders from Explorer starts LightRead directly with the target file or workspace directory.
+
+### Fixed
+
+- Images failing to load outside default scopes: dynamically grant asset-protocol scope on `openFile`/`openFolder` (user-authorized paths).
+- Certain SVGs rendering 0x0 or invisible in preview: refined iframe SVG scaling rules to preserve viewBox aspect ratio while filling the viewport.
+
 ## 0.1.2 - 25-08-2026
 
 ### Added

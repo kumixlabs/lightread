@@ -52,7 +52,7 @@ export function SvgViewer({ content, tabId, draft, readOnly, onCursor }: SvgView
                 stretches. Full-size iframe keeps it sandboxed while using the
                 whole viewport. Upgrade path: zoom controls if ever needed. */}
             <iframe
-              srcDoc={`<!DOCTYPE html><html><head><style>html,body{margin:0;height:100%;background:transparent;display:flex;align-items:center;justify-content:center}svg{max-width:100%;max-height:100%;width:auto;height:auto}</style></head><body>${draft ?? content}</body></html>`}
+              srcDoc={`<!DOCTYPE html><html><head><style>html,body{margin:0;height:100%;background:transparent}body{display:flex;align-items:center;justify-content:center;overflow:hidden}svg{width:100%;height:100%;max-width:100%;max-height:100%}svg:not([viewBox]){width:auto;height:auto}</style></head><body>${draft ?? content}</body></html>`}
               sandbox=""
               className="h-full w-full border-0 bg-transparent"
               title="SVG Preview"

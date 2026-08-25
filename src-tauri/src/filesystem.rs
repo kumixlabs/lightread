@@ -191,3 +191,27 @@ pub fn get_file_metadata(path: String) -> Result<FileMetadata, String> {
 pub fn file_exists(path: String) -> bool {
     Path::new(&path).exists()
 }
+
+#[tauri::command]
+pub fn get_cli_args() -> Vec<String> {
+    std::env::args().skip(1).collect()
+}
+
+/// Grant asset-protocol scope for a user-opened file/folder. Static scopes
+/// cannot cover "open anything from anywhere" — the user action here is the
+/// authorization.
+#[tauri::command]
+pub fn grant_asset_scope(
+    app: tauri::AppHandle,
+    path: String,
+    is_dir: bool,
+) -> Result<(), String> {
+    use tauri::Manager;
+    let scopes = app.state::<tauri::scope::Scopes>();
+    if is_dir {
+        scopes.allow_directory(&path, true)
+    } else {
+        scopes.allow_file(&path)
+    }
+    .map_err(|e| e.to_string())
+}

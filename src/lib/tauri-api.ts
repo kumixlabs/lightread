@@ -51,6 +51,15 @@ export async function fileExists(path: string): Promise<boolean> {
   return invoke<boolean>("file_exists", { path });
 }
 
+export async function getCliArgs(): Promise<string[]> {
+  return invoke<string[]>("get_cli_args");
+}
+
+/** Grant asset-protocol access to a user-opened path (file or folder). */
+export async function grantAssetScope(path: string, isDir: boolean): Promise<void> {
+  await invoke("grant_asset_scope", { path, isDir });
+}
+
 export async function startFileWatch(path: string): Promise<void> {
   await invoke("start_file_watch", { path });
 }

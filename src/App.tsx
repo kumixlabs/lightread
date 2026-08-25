@@ -8,7 +8,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { useFileWatcher } from "@/hooks/use-file-watcher";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useTheme } from "@/hooks/use-theme";
-import { getFileMetadata, pickFile, pickFolder } from "@/lib/tauri-api";
+import { getCliArgs, getFileMetadata, pickFile, pickFolder } from "@/lib/tauri-api";
 import { useStore } from "@/stores/app-store";
 
 export default function App() {
@@ -37,13 +37,33 @@ export default function App() {
     };
   }, [handleOpenFile, handleOpenFolder]);
 
-  // Restore last session's workspace folder + tabs (paths only — drafts are
-  // never restored).
+  // Restore last session's workspace folder + tabs (or open path from CLI arg)
   useEffect(() => {
     const s = useStore.getState();
-    if (s.tabs.length > 0) return;
     let cancelled = false;
     (async () => {
+      // 1. Check if launched with a file/folder arg ("Open with LightRead" cold start)
+      try {
+        const args = await getCliArgs();
+        const targetPath = args.find((a) => !a.startsWith("-") && !a.startsWith("/"));
+        if (targetPath) {
+          const meta = await getFileMetadata(targetPath).catch(() => null);
+          if (meta) {
+            if (meta.is_dir) {
+              await s.openFolder(targetPath);
+            } else {
+              await s.openFile(targetPath);
+            }
+            useStore.setState({ fileError: null });
+            return;
+          }
+        }
+      } catch {
+        // ignore cli arg parsing errors, fallback to session restore
+      }
+
+      if (cancelled || s.tabs.length > 0) return;
+
       if (s.sessionRootPath) await s.openFolder(s.sessionRootPath).catch(() => {});
       if (cancelled) return;
       for (const p of s.sessionTabs) {
@@ -64,9 +84,15 @@ export default function App() {
   // "Open with LightRead" from Explorer: second instance forwards here.
   useEffect(() => {
     let unlisten: (() => void) | undefined;
-    listen<string[]>("single-instance", (e) => {
-      const file = e.payload[e.payload.length - 1];
-      if (file) useStore.getState().openFile(file);
+    listen<string[]>("single-instance", async (e) => {
+      const targetPath = e.payload.find((a) => !a.startsWith("-") && !a.startsWith("/"));
+      if (!targetPath) return;
+      const meta = await getFileMetadata(targetPath).catch(() => null);
+      if (meta?.is_dir) {
+        useStore.getState().openFolder(targetPath);
+      } else if (meta) {
+        useStore.getState().openFile(targetPath);
+      }
     }).then((fn) => {
       unlisten = fn;
     });
