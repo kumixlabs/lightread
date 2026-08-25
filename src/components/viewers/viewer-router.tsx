@@ -98,17 +98,46 @@ export function ViewerRouter() {
             fontSize={settings.fontSize}
             lineHeight={settings.lineHeight}
             codeTheme={settings.codeTheme}
+            tabId={activeTab.id}
+            draft={activeTab.draft}
+            readOnly={!!file.truncated}
+            onCursor={setCursor}
           />
         );
       }
       case "csv":
-        return <CsvViewer content={file.content} fontSize={settings.fontSize} />;
+        return (
+          <CsvViewer
+            content={file.content}
+            draft={activeTab.draft}
+            tabId={activeTab.id}
+            fontSize={settings.fontSize}
+            onCursor={setCursor}
+            readOnly={!!file.truncated}
+          />
+        );
       case "image":
         return <ImageViewer file={file} />;
       case "svg":
-        return <SvgViewer content={file.content} />;
+        return (
+          <SvgViewer
+            content={file.content}
+            tabId={activeTab.id}
+            draft={activeTab.draft}
+            readOnly={!!file.truncated}
+            onCursor={setCursor}
+          />
+        );
       case "html":
-        return <HtmlViewer content={file.content} />;
+        return (
+          <HtmlViewer
+            content={file.content}
+            tabId={activeTab.id}
+            draft={activeTab.draft}
+            readOnly={!!file.truncated}
+            onCursor={setCursor}
+          />
+        );
       default:
         return <UnsupportedViewer file={file} />;
     }
@@ -157,7 +186,9 @@ export function ViewerRouter() {
           Large file — showing first 10 MB only. Read-only.
         </div>
       )}
-      {renderViewer()}
+      <div key={activeTab.id} className="h-full">
+        {renderViewer()}
+      </div>
     </div>
   );
 }

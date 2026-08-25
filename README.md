@@ -11,6 +11,7 @@ A lightweight document reader & editor for Windows, macOS, and Linux. Think Wind
 - **Code viewer** — Shiki syntax highlighting (100+ languages, lazy-loaded), themes, line numbers, word wrap. Read-only by design.
 - **Customizable typography** — font size (10–28 px) and line height (1.00–3.00) synced across preview, editor, and code viewers.
 - **Searchable code themes** — Shiki color scheme selector with instant filter.
+- **Edit anything text-based** — notepad-style editing for `.txt`, `.md`, code files (JSON/TS/etc.), HTML, SVG, and CSV source; `Ctrl+S` to save, dirty tabs marked.
 - **Pretty JSON** — minified JSON is indented on display.
 - **CSV/TSV tables** — sticky header, delimiter auto-detect.
 - **Images / SVG / HTML** — zoomable images, sandboxed previews (no script execution).

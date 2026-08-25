@@ -7,9 +7,13 @@ import { useStore } from "@/stores/app-store";
 
 interface HtmlViewerProps {
   content: string;
+  tabId?: string;
+  draft?: string;
+  readOnly?: boolean;
+  onCursor?: (line: number, col: number) => void;
 }
 
-export function HtmlViewer({ content }: HtmlViewerProps) {
+export function HtmlViewer({ content, tabId, draft, readOnly, onCursor }: HtmlViewerProps) {
   const settings = useStore((s) => s.settings);
   const [mode, setMode] = useState<"preview" | "source">("preview");
 
@@ -44,7 +48,7 @@ export function HtmlViewer({ content }: HtmlViewerProps) {
       <div className="flex-1 overflow-hidden">
         {mode === "preview" ? (
           <iframe
-            srcDoc={content}
+            srcDoc={draft ?? content}
             sandbox=""
             className="h-full w-full border-0 bg-white"
             title="HTML Preview"
@@ -58,6 +62,10 @@ export function HtmlViewer({ content }: HtmlViewerProps) {
             fontSize={settings.fontSize}
             lineHeight={settings.lineHeight}
             codeTheme={settings.codeTheme}
+            tabId={tabId}
+            draft={draft}
+            readOnly={readOnly}
+            onCursor={onCursor}
           />
         )}
       </div>

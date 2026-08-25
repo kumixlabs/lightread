@@ -1,4 +1,4 @@
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { exit } from "@tauri-apps/plugin-process";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
@@ -461,7 +461,7 @@ export const useStore = create<AppState>()(
         });
 
         if (pending.exitAfter) {
-          await getCurrentWindow().destroy();
+          await exit(0);
         }
       },
 
@@ -471,7 +471,7 @@ export const useStore = create<AppState>()(
           set({ pendingClose: { tabIds: dirty.map((t) => t.id), exitAfter: true } });
           return;
         }
-        await getCurrentWindow().destroy();
+        await exit(0);
       },
 
       setCursor: (line, col) => set({ cursor: { line, col } }),

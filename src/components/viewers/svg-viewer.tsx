@@ -7,9 +7,13 @@ import { useStore } from "@/stores/app-store";
 
 interface SvgViewerProps {
   content: string;
+  tabId?: string;
+  draft?: string;
+  readOnly?: boolean;
+  onCursor?: (line: number, col: number) => void;
 }
 
-export function SvgViewer({ content }: SvgViewerProps) {
+export function SvgViewer({ content, tabId, draft, readOnly, onCursor }: SvgViewerProps) {
   const settings = useStore((s) => s.settings);
   const [mode, setMode] = useState<"source" | "preview">("preview");
 
@@ -44,10 +48,13 @@ export function SvgViewer({ content }: SvgViewerProps) {
       <div className="flex-1 overflow-hidden">
         {mode === "preview" ? (
           <div className="flex h-full items-center justify-center overflow-auto p-8">
+            {/* ponytail: srcDoc iframe defaults 300×150; svg fills via viewBox or
+                stretches. Full-size iframe keeps it sandboxed while using the
+                whole viewport. Upgrade path: zoom controls if ever needed. */}
             <iframe
-              srcDoc={content}
+              srcDoc={`<!DOCTYPE html><html><head><style>html,body{margin:0;height:100%;background:transparent;display:flex;align-items:center;justify-content:center}svg{max-width:100%;max-height:100%;width:auto;height:auto}</style></head><body>${draft ?? content}</body></html>`}
               sandbox=""
-              className="max-h-full max-w-full border-0 bg-transparent"
+              className="h-full w-full border-0 bg-transparent"
               title="SVG Preview"
             />
           </div>
@@ -60,6 +67,10 @@ export function SvgViewer({ content }: SvgViewerProps) {
             fontSize={settings.fontSize}
             lineHeight={settings.lineHeight}
             codeTheme={settings.codeTheme}
+            tabId={tabId}
+            draft={draft}
+            readOnly={readOnly}
+            onCursor={onCursor}
           />
         )}
       </div>

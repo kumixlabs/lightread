@@ -2,7 +2,19 @@
 
 All notable changes to LightRead will be documented in this file.
 
-## 0.1.1
+## 0.1.2 - 25-08-2026
+
+### Added
+
+- Edit mode for all text-based files: code (JSON/TS/etc.), HTML, SVG (source mode), and CSV/TSV (source mode) now offer a plain notepad-style editing surface with `Ctrl+S` save. Highlighted views remain read-only.
+- Auto-publish releases (`releaseDraft: false`) and updater artifacts with the correct signing key.
+- Bundle metadata: publisher "Kumix Labs", homepage kumix.io, copyright, category Productivity.
+
+### Fixed
+
+- Window close button did nothing: exit now uses `process.exit` (permission granted) instead of `window.destroy` (denied by capabilities).
+
+## 0.1.1 - 25-08-2026
 
 ### Fixed
 
@@ -10,7 +22,7 @@ All notable changes to LightRead will be documented in this file.
 - Markdown code blocks unreadable in light mode: pre text forced to `--foreground` over the muted surface.
 - Updater "Failed to check for updates": enabled `bundle.createUpdaterArtifacts` so CI produces `latest.json` + signatures.
 
-## 0.1.0
+## 0.1.0 - 24-08-2026
 
 Initial release.
 

@@ -12,12 +12,12 @@
 - Tauri API wrapper: src/lib/tauri-api.ts
 - Rust commands: src-tauri/src/{filesystem,watchers,search}.rs (read/write text, directory listing, file watchers, project search)
 - Viewers dispatched by viewerType in src/components/viewers/viewer-router.tsx
-- Editing: plain textarea surface for `text` + `markdown` source mode only. Code viewers stay read-only.
+- Editing: plain textarea surface for `text`, `markdown` source, and the Edit mode of `code`/`html`/`svg`/`csv` source. Highlighted view stays read-only; editing surface is always plain textarea.
 - Release CI: .github/workflows/release.yml (Windows/macOS/Linux matrix; draft release on `v*` tags)
 
 # Key rules
 - Editing is plain-text only (notepad-style). No WYSIWYG, no Monaco/CodeMirror/TipTap.
-- `code` viewerType is read-only. Never make code files editable.
+- All text-based files are editable via plain-text Edit mode (no rich editing surface). Highlighting is view-only.
 - Never execute user files. No terminal (removed).
 - Markdown preview must strip raw HTML (no rehype-raw). HTML/SVG previews only in `sandbox=""` iframes via srcDoc.
 - Writes only via Rust `write_text_file`. No fs plugin, no delete/rename.
