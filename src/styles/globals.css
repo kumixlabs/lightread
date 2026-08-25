@@ -229,6 +229,9 @@
    Light mode: github-light tokens on light muted. Dark: github-dark on dark muted. */
 .markdown-body pre {
   background: var(--muted) !important;
+  /* typography default pre text is light gray (meant for dark pre bg) —
+     our muted surface is light in light mode, so force readable text */
+  color: var(--foreground) !important;
   border: 1px solid var(--border);
   border-radius: 8px;
 }

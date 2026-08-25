@@ -2,6 +2,14 @@
 
 All notable changes to LightRead will be documented in this file.
 
+## 0.1.1
+
+### Fixed
+
+- Code viewer (JSON/TS/etc.) stuck loading forever in packaged builds: CSP now allows `'wasm-unsafe-eval'` so Shiki's oniguruma WASM can compile; viewer falls back to plain text if highlighting fails.
+- Markdown code blocks unreadable in light mode: pre text forced to `--foreground` over the muted surface.
+- Updater "Failed to check for updates": enabled `bundle.createUpdaterArtifacts` so CI produces `latest.json` + signatures.
+
 ## 0.1.0
 
 Initial release.

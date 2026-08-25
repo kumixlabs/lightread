@@ -32,11 +32,14 @@ export function CodeViewer({
   const [isDark, setIsDark] = useState(false);
   const [copied, setCopied] = useState(false);
   const [themeReady, setThemeReady] = useState(true);
+  const [highlightFailed, setHighlightFailed] = useState(false);
   const [langReady, setLangReady] = useState(true);
   const copyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
-    getHighlighter().then(setHighlighter);
+    getHighlighter()
+      .then(setHighlighter)
+      .catch(() => setHighlightFailed(true));
   }, []);
 
   useEffect(() => {
@@ -64,6 +67,12 @@ export function CodeViewer({
   }, [highlighter, language]);
 
   const { lines } = useMemo(() => {
+    if (highlightFailed)
+      return {
+        lines: content
+          .split("\n")
+          .map((l, i) => ({ num: i + 1, html: escapeHtml(l) || "&#8203;" })),
+      };
     if (!highlighter || !themeReady || !langReady)
       return { lines: [] as { num: number; html: string }[] };
     const loaded = highlighter.getLoadedLanguages();
@@ -95,7 +104,7 @@ export function CodeViewer({
           .map((l, i) => ({ num: i + 1, html: escapeHtml(l) || "&#8203;" })),
       };
     }
-  }, [highlighter, content, language, activeTheme, themeReady, langReady]);
+  }, [highlighter, highlightFailed, content, language, activeTheme, themeReady, langReady]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(content);
@@ -106,7 +115,7 @@ export function CodeViewer({
 
   useEffect(() => () => clearTimeout(copyTimer.current), []);
 
-  if (!highlighter || !themeReady) {
+  if (!highlightFailed && (!highlighter || !themeReady)) {
     return (
       <div className="flex h-full items-center justify-center gap-2 text-muted-foreground text-sm">
         <div className="size-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
