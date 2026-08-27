@@ -3,10 +3,14 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import {
+  createDir,
+  createFile,
+  deletePath,
   grantAssetScope,
   loadFile,
   pickSavePath,
   readDirectory,
+  renamePath,
   startFileWatch,
   stopAllWatches,
   stopFileWatch,
@@ -20,6 +24,17 @@ import type { AppSettings, FileNode, RecentEntry, Tab } from "@/types";
 const selfWrites = new Map<string, number>();
 const SELF_WRITE_WINDOW_MS = 2000;
 
+// Tree refresh guard: on some filesystems (WSL inotify, drvfs) merely READING a
+// directory emits watch events — refresh → read → event → refresh loop. Events
+// arriving within this window after a programmatic refresh are our own reads.
+const TREE_REFRESH_QUIET_MS = 2000;
+export const treeEventGuard = { until: 0 };
+/** Stamp after ANY tree-reading operation: its fs reads will emit watcher
+ * echoes on WSL/drvfs that must not trigger another refresh. */
+export function markTreeRead() {
+  treeEventGuard.until = Date.now() + TREE_REFRESH_QUIET_MS;
+}
+
 interface PendingClose {
   tabIds: string[];
   /** Close the window after resolving (app exit flow). */
@@ -32,11 +47,17 @@ interface AppState {
     rootName: string | null;
     tree: FileNode[];
     loading: boolean;
+    /** Incremented on every tree reload — lazy children refetch on change. */
+    treeVersion: number;
   };
 
   tabs: Tab[];
   activeTabId: string | null;
   expandedDirs: Set<string>;
+  /** Inline create-file/folder input: directory the new item goes into. */
+  creating: { parentPath: string; type: "file" | "dir" } | null;
+  /** Inline rename input: path of the node being renamed. */
+  renamingPath: string | null;
 
   fileSearch: string;
   findOpen: boolean;
@@ -91,6 +112,12 @@ interface AppState {
   markFileChanged: (path: string) => void;
   clearFileChanged: (path: string) => void;
   refreshTree: () => Promise<void>;
+  beginCreate: (parentPath: string, type: "file" | "dir") => void;
+  commitCreate: (name: string) => Promise<void>;
+  beginRename: (path: string) => void;
+  commitRename: (newName: string) => Promise<void>;
+  deleteNode: (path: string) => Promise<void>;
+  cancelFsEdit: () => void;
   expandAll: () => Promise<void>;
 
   /** Editing */
@@ -130,7 +157,9 @@ const DEFAULT_SETTINGS: AppSettings = {
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
-      workspace: { rootPath: null, rootName: null, tree: [], loading: false },
+      workspace: { rootPath: null, rootName: null, tree: [], loading: false, treeVersion: 0 },
+      creating: null,
+      renamingPath: null,
 
       tabs: [],
       activeTabId: null,
@@ -160,21 +189,32 @@ export const useStore = create<AppState>()(
       recents: [],
 
       openFolder: async (path: string) => {
-        set({ workspace: { rootPath: null, rootName: null, tree: [], loading: true } });
+        set({
+          workspace: { rootPath: null, rootName: null, tree: [], loading: true, treeVersion: 0 },
+        });
         try {
           await stopAllWatches();
           // Await before reading so any first image render is authorized (no race).
           await grantAssetScope(path, true).catch(() => {});
           const tree = await readDirectory(path);
           set({
-            workspace: { rootPath: path, rootName: basename(path), tree, loading: false },
+            workspace: {
+              rootPath: path,
+              rootName: basename(path),
+              tree,
+              loading: false,
+              treeVersion: 0,
+            },
             expandedDirs: new Set([path]),
           });
-          // Watches were stopped globally; restart for tabs that stay open.
+          // Watches were stopped globally; restart for tabs that stay open
+          // and recursively watch the workspace root for tree updates.
           for (const t of get().tabs) {
             startFileWatch(t.file.path).catch(() => {});
           }
+          startFileWatch(path, true).catch(() => {});
           get().addRecent({ path, name: basename(path), isDir: true, openedAt: Date.now() });
+          markTreeRead();
         } catch (e) {
           set((state) => ({
             workspace: { ...state.workspace, loading: false },
@@ -357,7 +397,103 @@ export const useStore = create<AppState>()(
         const { rootPath } = get().workspace;
         if (!rootPath) return;
         const tree = await readDirectory(rootPath);
-        set((state) => ({ workspace: { ...state.workspace, tree } }));
+        // Bumping treeVersion makes FileTreeNode drop cached lazyChildren
+        // so expanded dirs re-fetch after external changes (delete/rename).
+        set((state) => ({
+          workspace: { ...state.workspace, tree, treeVersion: state.workspace.treeVersion + 1 },
+        }));
+        markTreeRead();
+      },
+
+      beginCreate: (parentPath, type) => {
+        // Expand so the input row (and later the new node) is visible.
+        set((state) => ({
+          creating: { parentPath, type },
+          renamingPath: null,
+          expandedDirs: new Set(state.expandedDirs).add(parentPath),
+        }));
+      },
+
+      commitCreate: async (rawName) => {
+        const { creating } = get();
+        if (!creating) return;
+        const name = rawName.trim();
+        set({ creating: null });
+        if (!name || name === "." || name === ".." || /[\\/]/.test(name)) {
+          set({ fileError: `Invalid name: "${name}"` });
+          return;
+        }
+        const path = `${creating.parentPath}/${name}`;
+        try {
+          if (creating.type === "file") await createFile(path);
+          else await createDir(path);
+          await get().refreshTree();
+        } catch (e) {
+          set({ fileError: `Could not create "${name}": ${String(e)}` });
+        }
+      },
+
+      beginRename: (path) => set({ renamingPath: path, creating: null }),
+
+      commitRename: async (rawName) => {
+        const { renamingPath } = get();
+        if (!renamingPath) return;
+        const name = rawName.trim();
+        set({ renamingPath: null });
+        if (!name || name === "." || name === ".." || /[\\/]/.test(name)) {
+          set({ fileError: `Invalid name: "${name}"` });
+          return;
+        }
+        const from = renamingPath;
+        const to = `${from.slice(0, from.lastIndexOf("/"))}/${name}`;
+        if (from === to) return;
+        try {
+          await renamePath(from, to);
+          // Retarget open tabs whose file moved (keeps draft + dirty state),
+          // swap their file watch to the new path, and keep expanded dirs open.
+          // ...and swap their file watch to the new path.
+          if (get().tabs.some((t) => t.id === from)) {
+            stopFileWatch(from).catch(() => {});
+            startFileWatch(to).catch(() => {});
+          }
+          set((state) => ({
+            tabs: state.tabs.map((t) =>
+              t.id === from
+                ? { ...t, id: to, file: { ...t.file, path: to, name: basename(to) } }
+                : t,
+            ),
+            activeTabId: state.activeTabId === from ? to : state.activeTabId,
+            expandedDirs: new Set(Array.from(state.expandedDirs).map((p) => (p === from ? to : p))),
+          }));
+          selfWrites.delete(from);
+          await get().refreshTree();
+        } catch (e) {
+          set({ fileError: `Could not rename to "${name}": ${String(e)}` });
+        }
+      },
+
+      cancelFsEdit: () => set({ creating: null, renamingPath: null }),
+
+      deleteNode: async (path) => {
+        const prefix = path.endsWith("/") ? path : `${path}/`;
+        const affected = get().tabs.filter(
+          (t) => t.file.path === path || t.file.path.startsWith(prefix),
+        );
+        if (affected.some(isDirty)) {
+          set({
+            fileError:
+              "Cannot delete: an open tab for this item has unsaved changes. Save or discard them first.",
+          });
+          return;
+        }
+        try {
+          await deletePath(path);
+          selfWrites.delete(path);
+          for (const t of affected) get().closeTab(t.id);
+          await get().refreshTree();
+        } catch (e) {
+          set({ fileError: `Could not delete: ${String(e)}` });
+        }
       },
 
       expandAll: async () => {

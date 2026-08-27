@@ -203,6 +203,38 @@ pub fn get_cli_args() -> Vec<String> {
     std::env::args().skip(1).collect()
 }
 
+/// Create an empty file (fails if it already exists — never clobber).
+#[tauri::command]
+pub fn create_file(path: String) -> Result<(), String> {
+    std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&path)
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Create an empty directory (fails if it already exists).
+#[tauri::command]
+pub fn create_dir(path: String) -> Result<(), String> {
+    std::fs::create_dir(&path).map_err(|e| e.to_string())
+}
+
+/// Rename/move a file or directory within the workspace.
+#[tauri::command]
+pub fn rename_path(from: String, to: String) -> Result<(), String> {
+    if Path::new(&to).exists() {
+        return Err("target already exists".into());
+    }
+    std::fs::rename(&from, &to).map_err(|e| e.to_string())
+}
+
+/// Move a file or directory to the OS trash (recoverable delete).
+#[tauri::command]
+pub fn delete_path(path: String) -> Result<(), String> {
+    trash::delete(&path).map_err(|e| e.to_string())
+}
+
 /// Grant asset-protocol scope for a user-opened file/folder. Static scopes
 /// cannot cover "open anything from anywhere" — the user action here is the
 /// authorization.

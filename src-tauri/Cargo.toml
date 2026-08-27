@@ -1,6 +1,6 @@
 [package]
 name = "lightread"
-version = "0.1.9"
+version = "0.2.0"
 description = "LightRead - Read. Edit. Preview. Nothing Else."
 authors = ["Kumix Labs"]
 license = "MIT"
@@ -32,6 +32,7 @@ serde_json = "1"
 serde = { version = "1", features = ["derive"] }
 notify = "8"
 notify-debouncer-mini = "0.5"
+trash = "5"
 
 [profile.dev]
 incremental = true # Compile your binary in smaller steps.

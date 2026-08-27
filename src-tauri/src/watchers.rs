@@ -13,11 +13,16 @@ pub struct WatcherState {
 #[tauri::command]
 pub fn start_file_watch(
     path: String,
+    recursive: Option<bool>,
     app: tauri::AppHandle,
     state: State<WatcherState>,
 ) -> Result<(), String> {
     let watch_path = PathBuf::from(&path);
     let event_path = path.clone();
+    let recursive = recursive.unwrap_or(false);
+    // Recursive watch (workspace tree) emits a distinct event so the frontend
+    // refreshes the tree instead of flagging a single tab file as changed.
+    let event_name: &'static str = if recursive { "tree-changed" } else { "file-changed" };
 
     let mut debouncer = notify_debouncer_mini::new_debouncer(
         std::time::Duration::from_millis(500),
@@ -25,7 +30,7 @@ pub fn start_file_watch(
             // ponytail: debouncer-mini gives no event kinds; if remove-vs-write
             // filtering ever matters, switch to notify-debouncer-full.
             if res.is_ok() {
-                let _ = app.emit("file-changed", &event_path);
+                let _ = app.emit(event_name, &event_path);
             }
         },
     )
@@ -35,7 +40,11 @@ pub fn start_file_watch(
         .watcher()
         .watch(
             &watch_path,
-            notify_debouncer_mini::notify::RecursiveMode::NonRecursive,
+            if recursive {
+                notify_debouncer_mini::notify::RecursiveMode::Recursive
+            } else {
+                notify_debouncer_mini::notify::RecursiveMode::NonRecursive
+            },
         )
         .map_err(|e| e.to_string())?;
 

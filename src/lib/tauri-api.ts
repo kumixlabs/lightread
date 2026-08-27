@@ -60,8 +60,28 @@ export async function grantAssetScope(path: string, isDir: boolean): Promise<voi
   await invoke("grant_asset_scope", { path, isDir });
 }
 
-export async function startFileWatch(path: string): Promise<void> {
-  await invoke("start_file_watch", { path });
+export async function startFileWatch(path: string, recursive = false): Promise<void> {
+  await invoke("start_file_watch", { path, recursive });
+}
+
+/** Create an empty file. Fails if it already exists. */
+export async function createFile(path: string): Promise<void> {
+  await invoke("create_file", { path });
+}
+
+/** Create an empty directory. */
+export async function createDir(path: string): Promise<void> {
+  await invoke("create_dir", { path });
+}
+
+/** Rename/move a file or directory. Fails if target exists. */
+export async function renamePath(from: string, to: string): Promise<void> {
+  await invoke("rename_path", { from, to });
+}
+
+/** Move a file or directory to the OS trash (recoverable). */
+export async function deletePath(path: string): Promise<void> {
+  await invoke("delete_path", { path });
 }
 
 export async function stopFileWatch(path: string): Promise<void> {

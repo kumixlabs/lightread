@@ -2,6 +2,26 @@
 
 All notable changes to LightRead will be documented in this file.
 
+## 0.2.0 - 26-08-2026
+
+### Added
+
+- **Create files & folders from the sidebar**: right-click empty space (project root) or any folder → New File / New Folder with an inline name input (Enter commits, Esc cancels).
+- **Rename in place**: right-click any file or folder → Rename; open tabs follow the renamed file (draft + dirty state preserved, file watch retargeted).
+- **Move to trash**: right-click any file or folder → Delete moves it to the OS trash (recycle bin) — recoverable, never permanent. Tabs of trashed files close automatically; unsaved changes block deletion.
+- **Live file tree**: the sidebar now watches the whole workspace — external deletes, renames, and creations appear automatically (~1s), no manual refresh.
+
+### Changed
+
+- File tree animations: smooth accordion expand/collapse, folder icon morph, chevron rotation, branch guide lines (respects OS reduce-motion).
+- Context menus rebuilt on `@kumix/ui` motion primitives: icons, labels, spring animations, long-press support (sidebar tree + tab bar).
+- `motion` added as an explicit dependency.
+
+### Fixed
+
+- Newly created items not appearing in the sidebar until refresh (stale lazy-children cache).
+- Infinite refresh loop on WSL: reading a directory emits watcher events there — programmatic reads are now echo-suppressed and background refetches swap data without flicker.
+
 ## 0.1.9 - 26-08-2026
 
 ### Fixed

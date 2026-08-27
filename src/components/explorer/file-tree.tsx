@@ -1,8 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
+import { FilePlus2, FolderPlus } from "lucide-react";
 
-import { FileTreeNode } from "@/components/explorer/file-tree-node";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuTrigger,
+} from "@kumix/ui/motion/context-menu";
+import { FileTreeNode, NameInput } from "@/components/explorer/file-tree-node";
 import { readDirectory } from "@/lib/tauri-api";
-import { useStore } from "@/stores/app-store";
+import { markTreeRead, useStore } from "@/stores/app-store";
 import type { FileNode } from "@/types";
 
 function filterTree(nodes: FileNode[], query: string): FileNode[] {
@@ -29,6 +37,7 @@ export function FileTree() {
   const loading = useStore((s) => s.workspace.loading);
   const fileSearch = useStore((s) => s.fileSearch);
   const rootPath = useStore((s) => s.workspace.rootPath);
+  const rootName = useStore((s) => s.workspace.rootName);
 
   // Lazy deep index: store tree is depth-1 (children expand lazily into local
   // state, invisible to filterTree). Fetch full tree once, only when the user
@@ -41,6 +50,7 @@ export function FileTree() {
   useEffect(() => {
     if (!fileSearch.trim() || !rootPath || deepTree) return;
     let cancelled = false;
+    markTreeRead();
     readDirectory(rootPath, 8)
       .then((t) => !cancelled && setDeepTree(t))
       .catch(() => {});
@@ -76,6 +86,24 @@ export function FileTree() {
   }, [activeTabId, rootPath]);
 
   const filteredTree = useMemo(() => filterTree(searchTree, fileSearch), [searchTree, fileSearch]);
+  const creating = useStore((s) => s.creating);
+  const beginCreate = useStore((s) => s.beginCreate);
+  const commitCreate = useStore((s) => s.commitCreate);
+  const cancelFsEdit = useStore((s) => s.cancelFsEdit);
+
+  const newMenu = (
+    <ContextMenuContent ariaLabel="Workspace actions">
+      <ContextMenuLabel>{rootName ?? "Workspace"}</ContextMenuLabel>
+      <ContextMenuItem onSelect={() => rootPath && beginCreate(rootPath, "file")}>
+        <FilePlus2 aria-hidden="true" className="size-4" />
+        New File
+      </ContextMenuItem>
+      <ContextMenuItem onSelect={() => rootPath && beginCreate(rootPath, "dir")}>
+        <FolderPlus aria-hidden="true" className="size-4" />
+        New Folder
+      </ContextMenuItem>
+    </ContextMenuContent>
+  );
 
   if (loading) {
     return (
@@ -94,10 +122,23 @@ export function FileTree() {
   }
 
   return (
-    <div className="py-1">
-      {filteredTree.map((node) => (
-        <FileTreeNode key={node.path} node={node} depth={0} />
-      ))}
-    </div>
+    <ContextMenu>
+      <ContextMenuTrigger>
+        <div className="py-1">
+          {creating?.parentPath === rootPath && (
+            <NameInput
+              depth={0}
+              placeholder={creating.type === "file" ? "file name" : "folder name"}
+              onCommit={(n) => commitCreate(n)}
+              onCancel={cancelFsEdit}
+            />
+          )}
+          {filteredTree.map((node) => (
+            <FileTreeNode key={node.path} node={node} depth={0} />
+          ))}
+        </div>
+      </ContextMenuTrigger>
+      {newMenu}
+    </ContextMenu>
   );
 }

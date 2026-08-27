@@ -101,14 +101,17 @@ Explicitly outside the scope:
 -   Debugging.
 -   Terminal / integrated shell.
 -   Git client, diff viewer, merge tool.
--   Media player (music/video playback).
+-   Media library / playlists / playback controls beyond a preview
+    player (in-tab preview playback exists and is the ceiling).
 -   Build systems, package management.
 -   Extension/plugin marketplace.
 -   Cloud sync, accounts, authentication.
 -   Collaborative editing.
 -   AI assistant.
 -   Executing user files.
--   File creation/rename/deletion as primary workflows.
+-   Bulk file management (multi-rename, drag-move, copy/paste of files).
+    LightRead offers single-item create/rename/trash as sidebar conveniences
+    — not a file manager.
 
 Editing is deliberately **plain text only**. If the user needs more,
 they should open a real editor.
@@ -283,6 +286,11 @@ Opens each file in its own tab, activates the last.
     `target`, `dist`, etc.).
 -   Recents section: recent files and folders with clear-all.
 -   Single click opens file; directory icon toggles expansion.
+-   Live tree: external deletes/renames/creates appear automatically
+    (recursive workspace watch, debounced).
+-   Context menu on the sidebar: New File / New Folder (inline name
+    input), Rename (inline), Move to trash (OS trash, recoverable).
+    Deleting an item with unsaved open tabs is blocked.
 
 ------------------------------------------------------------------------
 
@@ -580,8 +588,9 @@ Adding any permission requires justification in the PR.
 ## 24.2 Filesystem Scope
 
 All file IO goes through custom Rust commands, not the Tauri fs plugin
-ACL. Write commands write exactly the given path string — no globbing,
-no arbitrary delete/rename.
+ACL. Mutation commands (`write_text_file`, `create_file`, `create_dir`,
+`rename_path`, `delete_path`) write exactly the given path string — no
+globbing. `delete_path` moves to the OS trash (never a permanent delete).
 
 ------------------------------------------------------------------------
 
@@ -714,6 +723,8 @@ src-tauri/src/
 # 34. Implemented Scope
 
 -   [x] Explorer, tabs, quick open, project search, find bar
+-   [x] Live file tree (recursive watch, external changes auto-refresh)
+-   [x] Sidebar create file/folder, inline rename, move to trash
 -   [x] Code/CSV/image/SVG/HTML/unsupported viewers
 -   [x] Markdown render + hardening (no raw HTML, local images,
         relative links, anchors)
@@ -765,8 +776,10 @@ src-tauri/src/
     execution paths.
 4.  **No raw HTML in Markdown.** Strip it. HTML/SVG previews only in
     `sandbox=""` iframes via `srcDoc`.
-5.  **Writes go through one Rust command** (`write_text_file`) with
-    exact path semantics. No fs plugin ACL, no delete/rename.
+5.  **All mutations go through Rust commands** (`write_text_file`,
+    `create_file`, `create_dir`, `rename_path`, `delete_path`) with exact
+    path semantics. No fs plugin ACL. Delete only ever moves to the OS
+    trash — never permanent, never silent.
 6.  **Never lose user input.** Save errors keep dirty state; external
     conflicts never silently overwrite.
 7.  **Keep permissions minimal** (capabilities file). Adding a

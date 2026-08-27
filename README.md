@@ -26,6 +26,8 @@ A lightweight document reader & editor for Windows, macOS, and Linux. Think Wind
 
 ### Workspace
 - **Explorer** — lazy file tree with filter; `.git`/`node_modules`/… ignored.
+- **Live tree** — external deletes/renames/creates show up automatically, no refresh needed.
+- **Create / rename / delete** — right-click in the sidebar: New File, New Folder, Rename (inline), Move to trash (recoverable via OS trash).
 - **Tabs** — middle-click close, close others/all, cycle (`Ctrl+Tab`).
 - **Quick open** (`Ctrl+P`), **project search** (`Ctrl+Shift+F`), breadcrumbs, recents.
 - **Session restore** — last open tabs (paths only) reopen on launch.

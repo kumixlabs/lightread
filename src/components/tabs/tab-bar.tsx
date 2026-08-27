@@ -8,8 +8,10 @@ import {
   FileVolume2,
   FileWarning,
   Globe,
+  Layers,
   type LucideIcon,
   Plus,
+  SquareX,
   X,
 } from "lucide-react";
 
@@ -18,7 +20,7 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
-} from "@kumix/ui/ui/context-menu";
+} from "@kumix/ui/motion/context-menu";
 import { ScrollArea, ScrollBar } from "@kumix/ui/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@kumix/ui/ui/tooltip";
 import { AUDIO_EXTENSIONS } from "@/lib/file-types/registry";
@@ -102,67 +104,75 @@ export function TabBar() {
               const isDirty = tab.draft !== undefined && tab.draft !== tab.file.content;
               return (
                 <ContextMenu key={tab.id}>
-                  <ContextMenuTrigger
-                    render={
-                      <div
-                        role="tab"
-                        tabIndex={0}
-                        aria-selected={isActive}
-                        onClick={() => setActiveTab(tab.id)}
-                        onMouseDown={(e) => {
-                          if (e.button === 1) {
-                            e.preventDefault();
-                            closeTab(tab.id);
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            setActiveTab(tab.id);
-                          }
-                        }}
-                        className={cn(
-                          "group relative flex h-9 min-w-0 shrink-0 cursor-pointer items-center gap-2 border-border border-r px-3 text-[13px] transition-all",
-                          isActive
-                            ? "bg-background text-foreground"
-                            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                        )}
-                      />
-                    }
-                  >
-                    {isActive && <span className="absolute inset-x-0 top-0 h-0.5 bg-primary" />}
-                    <Icon
-                      className={cn("size-3.5 shrink-0", isActive ? "text-primary" : "opacity-70")}
-                    />
-                    <span className="truncate">{tab.file.name}</span>
-                    {isDirty && (
-                      <span
-                        className="ml-1 inline-block size-1.5 shrink-0 rounded-full bg-primary"
-                        aria-label="Unsaved changes"
-                      />
-                    )}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        closeTab(tab.id);
+                  <ContextMenuTrigger>
+                    <div
+                      role="tab"
+                      tabIndex={0}
+                      aria-selected={isActive}
+                      onClick={() => setActiveTab(tab.id)}
+                      onMouseDown={(e) => {
+                        if (e.button === 1) {
+                          e.preventDefault();
+                          closeTab(tab.id);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setActiveTab(tab.id);
+                        }
                       }}
                       className={cn(
-                        "ml-auto inline-flex size-4 shrink-0 items-center justify-center rounded transition-all",
+                        "group relative flex h-9 min-w-0 shrink-0 cursor-pointer items-center gap-2 border-border border-r px-3 text-[13px] transition-all",
                         isActive
-                          ? "opacity-60 hover:bg-accent hover:opacity-100"
-                          : "opacity-0 hover:bg-accent group-hover:opacity-60 group-hover:hover:opacity-100",
+                          ? "bg-background text-foreground"
+                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                       )}
-                      aria-label="Close tab"
                     >
-                      <X className="size-3" />
-                    </button>
+                      {isActive && <span className="absolute inset-x-0 top-0 h-0.5 bg-primary" />}
+                      <Icon
+                        className={cn(
+                          "size-3.5 shrink-0",
+                          isActive ? "text-primary" : "opacity-70",
+                        )}
+                      />
+                      <span className="truncate">{tab.file.name}</span>
+                      {isDirty && (
+                        <span
+                          className="ml-1 inline-block size-1.5 shrink-0 rounded-full bg-primary"
+                          aria-label="Unsaved changes"
+                        />
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          closeTab(tab.id);
+                        }}
+                        className={cn(
+                          "ml-auto inline-flex size-4 shrink-0 items-center justify-center rounded transition-all",
+                          isActive
+                            ? "opacity-60 hover:bg-accent hover:opacity-100"
+                            : "opacity-0 hover:bg-accent group-hover:opacity-60 group-hover:hover:opacity-100",
+                        )}
+                        aria-label="Close tab"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </div>
                   </ContextMenuTrigger>
                   <ContextMenuContent>
-                    <ContextMenuItem onClick={() => closeTab(tab.id)}>Close</ContextMenuItem>
-                    <ContextMenuItem onClick={() => closeOtherTabs(tab.id)}>
+                    <ContextMenuItem onSelect={() => closeTab(tab.id)}>
+                      <X aria-hidden="true" className="size-4" />
+                      Close
+                    </ContextMenuItem>
+                    <ContextMenuItem onSelect={() => closeOtherTabs(tab.id)}>
+                      <SquareX aria-hidden="true" className="size-4" />
                       Close Others
                     </ContextMenuItem>
-                    <ContextMenuItem onClick={() => closeAllTabs()}>Close All</ContextMenuItem>
+                    <ContextMenuItem onSelect={() => closeAllTabs()}>
+                      <Layers aria-hidden="true" className="size-4" />
+                      Close All
+                    </ContextMenuItem>
                   </ContextMenuContent>
                 </ContextMenu>
               );
