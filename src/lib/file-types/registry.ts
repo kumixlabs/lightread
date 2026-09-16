@@ -518,7 +518,7 @@ export const AUDIO_EXTENSIONS = new Set([
   ".opus",
 ]);
 
-const VIDEO_EXTENSIONS = new Set([
+export const VIDEO_EXTENSIONS = new Set([
   ".mp4",
   ".m4v",
   ".mov",
@@ -529,7 +529,8 @@ const VIDEO_EXTENSIONS = new Set([
   ".wmv",
   ".mpg",
   ".mpeg",
-  ".ts",
+  // ponytail: .ts (MPEG-TS) omitted — conflicts with TypeScript extension.
+  // Add back with a filename heuristic if MPEG-TS support is ever needed.
   ".3gp",
 ]);
 const IMAGE_EXTENSIONS = new Set([

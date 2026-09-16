@@ -6,6 +6,7 @@ import {
   createDir,
   createFile,
   deletePath,
+  fileExists,
   grantAssetScope,
   loadFile,
   pickSavePath,
@@ -24,6 +25,16 @@ import type { AppSettings, FileNode, RecentEntry, Tab } from "@/types";
 const selfWrites = new Map<string, number>();
 const SELF_WRITE_WINDOW_MS = 2000;
 
+/** Prune stale entries so the map doesn't grow unbounded in long sessions. */
+function stampSelfWrite(path: string) {
+  selfWrites.set(path, Date.now());
+  // Lazy prune: only when map gets large enough to care.
+  if (selfWrites.size > 50) {
+    const cutoff = Date.now() - SELF_WRITE_WINDOW_MS * 2;
+    for (const [k, v] of selfWrites) if (v < cutoff) selfWrites.delete(k);
+  }
+}
+
 // Tree refresh guard: on some filesystems (WSL inotify, drvfs) merely READING a
 // directory emits watch events — refresh → read → event → refresh loop. Events
 // arriving within this window after a programmatic refresh are our own reads.
@@ -33,6 +44,11 @@ export const treeEventGuard = { until: 0 };
  * echoes on WSL/drvfs that must not trigger another refresh. */
 export function markTreeRead() {
   treeEventGuard.until = Date.now() + TREE_REFRESH_QUIET_MS;
+}
+
+/** Normalize separators for path joins/comparisons (Windows Rust paths use `\`). */
+export function toPosix(p: string): string {
+  return p.replace(/\\/g, "/");
 }
 
 interface PendingClose {
@@ -74,8 +90,14 @@ interface AppState {
   fileLoading: boolean;
   fileError: string | null;
   changedFiles: Set<string>;
+  /** Open tabs whose file vanished from disk (external delete). */
+  missingFiles: Set<string>;
   /** Unsaved-close confirmation (Save/Don't save/Cancel). */
   pendingClose: PendingClose | null;
+  /** Pending scroll-to-line request (project search jump). */
+  pendingReveal: { path: string; line: number } | null;
+  /** Newer release found by the startup update check. */
+  updateAvailable: string | null;
   /** Cursor position of the active editable surface (for status bar). */
   cursor: { line: number; col: number };
   /** Session restore: persisted open-tab paths (content is NOT restored). */
@@ -111,6 +133,11 @@ interface AppState {
   reloadFile: (tabId: string) => Promise<void>;
   markFileChanged: (path: string) => void;
   clearFileChanged: (path: string) => void;
+  clearMissing: (path: string) => void;
+  /** Ask the active viewer to scroll to a line once it is showing `path`. */
+  revealLine: (path: string, line: number) => void;
+  /** Drag-reorder a tab to a new index. */
+  moveTab: (tabId: string, toIndex: number) => void;
   refreshTree: () => Promise<void>;
   beginCreate: (parentPath: string, type: "file" | "dir") => void;
   commitCreate: (name: string) => Promise<void>;
@@ -142,7 +169,7 @@ function isDirty(tab: Tab | undefined): boolean {
   return !!tab && tab.draft !== undefined && tab.draft !== tab.file.content;
 }
 
-const DEFAULT_SETTINGS: AppSettings = {
+export const DEFAULT_SETTINGS: AppSettings = {
   theme: "system",
   fontSize: 14,
   lineHeight: 1.75,
@@ -179,7 +206,10 @@ export const useStore = create<AppState>()(
       fileLoading: false,
       fileError: null,
       changedFiles: new Set<string>(),
+      missingFiles: new Set<string>(),
       pendingClose: null,
+      pendingReveal: null,
+      updateAvailable: null,
       cursor: { line: 1, col: 1 },
       sessionTabs: [],
       sessionActive: null,
@@ -205,7 +235,7 @@ export const useStore = create<AppState>()(
               loading: false,
               treeVersion: 0,
             },
-            expandedDirs: new Set([path]),
+            expandedDirs: new Set<string>(),
           });
           // Watches were stopped globally; restart for tabs that stay open
           // and recursively watch the workspace root for tree updates.
@@ -220,11 +250,16 @@ export const useStore = create<AppState>()(
             workspace: { ...state.workspace, loading: false },
             fileError: String(e),
           }));
+          // Watches were stopped up front; keep open tabs live even on failure.
+          for (const t of get().tabs) {
+            startFileWatch(t.file.path).catch(() => {});
+          }
         }
       },
 
       openFile: async (path: string) => {
-        const existing = get().tabs.find((t) => t.file.path === path);
+        const pPosix = toPosix(path);
+        const existing = get().tabs.find((t) => toPosix(t.file.path) === pPosix);
         if (existing) {
           set({ activeTabId: existing.id });
           return;
@@ -317,11 +352,12 @@ export const useStore = create<AppState>()(
 
       toggleDir: (path: string) => {
         set((state) => {
+          const posix = toPosix(path);
           const next = new Set(state.expandedDirs);
-          if (next.has(path)) {
-            next.delete(path);
+          if (next.has(posix)) {
+            next.delete(posix);
           } else {
-            next.add(path);
+            next.add(posix);
           }
           return { expandedDirs: next };
         });
@@ -355,9 +391,22 @@ export const useStore = create<AppState>()(
               next.delete(tab.file.path);
               return next;
             })(),
+            missingFiles: (() => {
+              const next = new Set(state.missingFiles);
+              next.delete(tab.file.path);
+              return next;
+            })(),
           }));
         } catch (e) {
-          set({ fileError: String(e) });
+          // External delete: banner instead of a raw error (tab keeps content).
+          const gone = !(await fileExists(tab.file.path).catch(() => false));
+          if (gone) {
+            set((state) => ({
+              missingFiles: new Set(state.missingFiles).add(tab.file.path),
+            }));
+          } else {
+            set({ fileError: String(e) });
+          }
         }
       },
 
@@ -393,6 +442,27 @@ export const useStore = create<AppState>()(
           return { changedFiles: next };
         }),
 
+      clearMissing: (path: string) =>
+        set((state) => {
+          const next = new Set(state.missingFiles);
+          next.delete(path);
+          return { missingFiles: next };
+        }),
+
+      revealLine: (path, line) => set({ pendingReveal: { path, line } }),
+
+      moveTab: (tabId, toIndex) =>
+        set((state) => {
+          const from = state.tabs.findIndex((t) => t.id === tabId);
+          if (from === -1 || toIndex === from || toIndex < 0 || toIndex >= state.tabs.length) {
+            return {};
+          }
+          const tabs = [...state.tabs];
+          const [tab] = tabs.splice(from, 1);
+          tabs.splice(toIndex, 0, tab);
+          return { tabs };
+        }),
+
       refreshTree: async () => {
         const { rootPath } = get().workspace;
         if (!rootPath) return;
@@ -410,7 +480,7 @@ export const useStore = create<AppState>()(
         set((state) => ({
           creating: { parentPath, type },
           renamingPath: null,
-          expandedDirs: new Set(state.expandedDirs).add(parentPath),
+          expandedDirs: new Set(state.expandedDirs).add(toPosix(parentPath)),
         }));
       },
 
@@ -423,7 +493,7 @@ export const useStore = create<AppState>()(
           set({ fileError: `Invalid name: "${name}"` });
           return;
         }
-        const path = `${creating.parentPath}/${name}`;
+        const path = `${toPosix(creating.parentPath)}/${name}`;
         try {
           if (creating.type === "file") await createFile(path);
           else await createDir(path);
@@ -445,25 +515,60 @@ export const useStore = create<AppState>()(
           return;
         }
         const from = renamingPath;
-        const to = `${from.slice(0, from.lastIndexOf("/"))}/${name}`;
-        if (from === to) return;
+        const posix = toPosix(from);
+        const to = `${posix.slice(0, posix.lastIndexOf("/"))}/${name}`;
+        if (posix === to) return;
+        const fromPrefix = posix.endsWith("/") ? posix : `${posix}/`;
+        const toPrefix = to.endsWith("/") ? to : `${to}/`;
         try {
           await renamePath(from, to);
-          // Retarget open tabs whose file moved (keeps draft + dirty state),
+          // Retarget open tabs whose file/folder moved (keeps draft + dirty state),
           // swap their file watch to the new path, and keep expanded dirs open.
-          // ...and swap their file watch to the new path.
-          if (get().tabs.some((t) => t.id === from)) {
-            stopFileWatch(from).catch(() => {});
-            startFileWatch(to).catch(() => {});
+          for (const t of get().tabs) {
+            const tp = toPosix(t.file.path);
+            if (tp === posix) {
+              stopFileWatch(t.file.path).catch(() => {});
+              startFileWatch(to).catch(() => {});
+            } else if (tp.startsWith(fromPrefix)) {
+              const nextPath = `${toPrefix}${tp.slice(fromPrefix.length)}`;
+              stopFileWatch(t.file.path).catch(() => {});
+              startFileWatch(nextPath).catch(() => {});
+            }
           }
+
+          const activePosix = toPosix(get().activeTabId ?? "");
+          let nextActive = get().activeTabId;
+          if (activePosix === posix) {
+            nextActive = to;
+          } else if (activePosix.startsWith(fromPrefix)) {
+            nextActive = `${toPrefix}${activePosix.slice(fromPrefix.length)}`;
+          }
+
           set((state) => ({
-            tabs: state.tabs.map((t) =>
-              t.id === from
-                ? { ...t, id: to, file: { ...t.file, path: to, name: basename(to) } }
-                : t,
+            tabs: state.tabs.map((t) => {
+              const tp = toPosix(t.file.path);
+              if (tp === posix) {
+                return { ...t, id: to, file: { ...t.file, path: to, name: basename(to) } };
+              }
+              if (tp.startsWith(fromPrefix)) {
+                const nextPath = `${toPrefix}${tp.slice(fromPrefix.length)}`;
+                return {
+                  ...t,
+                  id: nextPath,
+                  file: { ...t.file, path: nextPath, name: basename(nextPath) },
+                };
+              }
+              return t;
+            }),
+            activeTabId: nextActive,
+            expandedDirs: new Set(
+              Array.from(state.expandedDirs).map((p) => {
+                const pp = toPosix(p);
+                if (pp === posix) return to;
+                if (pp.startsWith(fromPrefix)) return `${toPrefix}${pp.slice(fromPrefix.length)}`;
+                return p;
+              }),
             ),
-            activeTabId: state.activeTabId === from ? to : state.activeTabId,
-            expandedDirs: new Set(Array.from(state.expandedDirs).map((p) => (p === from ? to : p))),
           }));
           selfWrites.delete(from);
           await get().refreshTree();
@@ -475,10 +580,12 @@ export const useStore = create<AppState>()(
       cancelFsEdit: () => set({ creating: null, renamingPath: null }),
 
       deleteNode: async (path) => {
-        const prefix = path.endsWith("/") ? path : `${path}/`;
-        const affected = get().tabs.filter(
-          (t) => t.file.path === path || t.file.path.startsWith(prefix),
-        );
+        const posix = toPosix(path);
+        const prefix = posix.endsWith("/") ? posix : `${posix}/`;
+        const affected = get().tabs.filter((t) => {
+          const tp = toPosix(t.file.path);
+          return tp === posix || tp.startsWith(prefix);
+        });
         if (affected.some(isDirty)) {
           set({
             fileError:
@@ -500,17 +607,16 @@ export const useStore = create<AppState>()(
         const { tree } = get().workspace;
         if (tree.length === 0) return;
         const paths: string[] = [];
-        // ponytail: full recursive expansion; if huge repos feel slow,
-        // add a depth cap or switch to on-demand expansion per level.
+        // ponytail: sequential walk to avoid flooding hundreds of concurrent
+        // fs reads. If huge repos feel slow, add a depth cap.
         const walk = async (nodes: FileNode[]): Promise<void> => {
-          await Promise.all(
-            nodes
-              .filter((n) => n.isDir)
-              .map(async (n) => {
-                paths.push(n.path);
-                await walk(await readDirectory(n.path, 1));
-              }),
-          );
+          for (const n of nodes) {
+            if (!n.isDir) continue;
+            paths.push(toPosix(n.path));
+            markTreeRead(); // our reads emit watcher echoes on WSL/drvfs
+            const children = await readDirectory(n.path, 1);
+            await walk(children);
+          }
         };
         await walk(tree);
         set({ expandedDirs: new Set(paths) });
@@ -526,7 +632,7 @@ export const useStore = create<AppState>()(
         const tab = get().tabs.find((t) => t.id === tabId);
         if (!tab || !isDirty(tab)) return true;
         try {
-          selfWrites.set(tab.file.path, Date.now());
+          stampSelfWrite(tab.file.path);
           await writeTextFile(tab.file.path, tab.draft!);
           set((state) => ({
             tabs: state.tabs.map((t) =>

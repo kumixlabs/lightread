@@ -79,9 +79,13 @@ pub fn read_text_file(path: String) -> Result<String, String> {
             MAX_TEXT_SIZE / 1024 / 1024
         ));
     }
-    let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
+    let mut bytes = std::fs::read(path).map_err(|e| e.to_string())?;
     if is_binary_start(&bytes) {
         return Err("binary_file".to_string());
+    }
+    // Strip UTF-8 BOM so editors/previews never see a stray U+FEFF.
+    if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
+        bytes.drain(0..3);
     }
     String::from_utf8(bytes).map_err(|_| "encoding_error".to_string())
 }
@@ -117,6 +121,20 @@ pub fn read_directory(path: String, depth: u32, max_depth: u32) -> Result<Vec<Fi
     if !dir.is_dir() {
         return Err("Not a directory".to_string());
     }
+    // Canonicalize to detect symlink cycles: if a symlink points back to an
+    // ancestor we've already visited, skip it to avoid infinite recursion.
+    let canonical = dir.canonicalize().unwrap_or_else(|_| dir.to_path_buf());
+    let mut seen = std::collections::HashSet::new();
+    seen.insert(canonical);
+    read_directory_inner(dir, depth, max_depth, &mut seen)
+}
+
+fn read_directory_inner(
+    dir: &Path,
+    depth: u32,
+    max_depth: u32,
+    seen: &mut std::collections::HashSet<std::path::PathBuf>,
+) -> Result<Vec<FileEntry>, String> {
     let mut entries: Vec<FileEntry> = Vec::new();
 
     let read_dir = std::fs::read_dir(dir).map_err(|e| e.to_string())?;
@@ -141,12 +159,19 @@ pub fn read_directory(path: String, depth: u32, max_depth: u32) -> Result<Vec<Fi
         let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
 
         let children = if is_dir && depth < max_depth {
-            read_directory(
-                entry_path.to_string_lossy().into_owned(),
-                depth + 1,
-                max_depth,
-            )
-            .ok()
+            // Symlink cycle detection: skip if canonical path already visited.
+            let canon = entry_path.canonicalize().unwrap_or_else(|_| entry_path.clone());
+            if seen.insert(canon) {
+                read_directory_inner(
+                    &entry_path,
+                    depth + 1,
+                    max_depth,
+                    seen,
+                )
+                .ok()
+            } else {
+                None // symlink cycle — skip
+            }
         } else {
             None
         };

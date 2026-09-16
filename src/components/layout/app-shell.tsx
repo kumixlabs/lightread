@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@kumix/ui/ui/button";
 import {
@@ -59,13 +59,23 @@ function SidebarPane({ width, onResize }: { width: number; onResize: (px: number
   // Freeze initial width per mount: re-feeding a changing defaultSize while
   // dragging re-registers the panel and fights the resize gesture.
   const [initialWidth] = useState(width);
+  // Debounce settings writes — persisting on every drag frame churns storage.
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const handleResize = useCallback(
+    (px: number) => {
+      clearTimeout(timer.current);
+      timer.current = setTimeout(() => onResize(px), 150);
+    },
+    [onResize],
+  );
+  useEffect(() => () => clearTimeout(timer.current), []);
   return (
     <ResizablePanelGroup orientation="horizontal">
       <ResizablePanel
         defaultSize={initialWidth}
         minSize={250}
         maxSize={500}
-        onResize={(size) => onResize(size.inPixels)}
+        onResize={(size) => handleResize(size.inPixels)}
       >
         <Sidebar />
       </ResizablePanel>

@@ -2,8 +2,9 @@ import { useMemo, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { CircleAlert, ExternalLink, FileAudio, FileVideo } from "lucide-react";
 
+import { VIDEO_EXTENSIONS } from "@/lib/file-types/registry";
 import { openInDefaultApp } from "@/lib/tauri-api";
-import { formatBytes } from "@/lib/utils";
+import { extname, formatBytes } from "@/lib/utils";
 import type { LoadedFile } from "@/types";
 
 interface MediaViewerProps {
@@ -14,7 +15,7 @@ export function MediaViewer({ file }: MediaViewerProps) {
   const src = useMemo(() => convertFileSrc(file.path), [file.path]);
   const [error, setError] = useState<string | null>(null);
 
-  const isVideo = /\.(mp4|m4v|mov|webm|avi|mkv|flv|wmv|mpg|mpeg|ts|3gp)$/i.test(file.name);
+  const isVideo = VIDEO_EXTENSIONS.has(extname(file.name));
 
   return (
     <div className="flex h-full flex-col bg-background">

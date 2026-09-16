@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { AlertCircle, Monitor, Moon, Sun } from "lucide-react";
+import { AlertCircle, ArrowUpCircle, Monitor, Moon, Sun } from "lucide-react";
 
 import { formatBytes, relativePath } from "@/lib/utils";
 import { useStore } from "@/stores/app-store";
@@ -20,6 +20,7 @@ export function StatusBar() {
   const cursor = useStore((s) => s.cursor);
   const theme = useStore((s) => s.settings.theme);
   const updateSettings = useStore((s) => s.updateSettings);
+  const updateAvailable = useStore((s) => s.updateAvailable);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
   const file = activeTab?.file;
@@ -99,6 +100,15 @@ export function StatusBar() {
       )}
       <span className="shrink-0 tabular-nums">{formatBytes(file.size)}</span>
       <div className="h-3 w-px bg-border" />
+      {updateAvailable && (
+        <button
+          onClick={() => useStore.getState().setSettingsOpen(true)}
+          className="flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-primary transition-colors hover:bg-accent"
+          title={`Version ${updateAvailable} available — click to install`}
+        >
+          <ArrowUpCircle className="size-3.5" />v{updateAvailable}
+        </button>
+      )}
       {ThemeBtn}
     </div>
   );

@@ -70,5 +70,25 @@ pub fn run() {
         .build(tauri::generate_context!())
         .map_err(|e| e.to_string())
         .expect("error while building tauri application")
-        .run(|_app, _event| {});
+        .run(|_app, _event| {
+            // macOS: "Open with LightRead" while already running — the
+            // single-instance plugin is Windows/Linux only, so Finder file
+            // URLs arrive here and are forwarded to the frontend.
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Opened { urls } = _event {
+                let paths: Vec<String> = urls
+                    .into_iter()
+                    .map(|u| u.to_string())
+                    .filter(|p| !p.is_empty())
+                    .collect();
+                if !paths.is_empty() {
+                    if let Some(window) = _app.get_webview_window("main") {
+                        let _ = window.set_focus();
+                    }
+                    if let Err(e) = _app.emit("mac-open", paths) {
+                        log::warn!("failed to forward macOS open events: {e}");
+                    }
+                }
+            }
+        });
 }

@@ -94,8 +94,3 @@ export interface AppSettings {
   codeTheme: CodeTheme;
   markdownDefaultMode: "source" | "preview";
 }
-
-/** Is this file editable in LightRead (plain text editing)? */
-export function isEditable(viewerType: ViewerType): boolean {
-  return viewerType === "text" || viewerType === "markdown";
-}

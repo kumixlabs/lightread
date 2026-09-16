@@ -3,7 +3,7 @@ import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialo
 import { openPath as openExternal } from "@tauri-apps/plugin-opener";
 
 import { detectFileType } from "@/lib/file-types/registry";
-import { basename, dirname, extname } from "@/lib/utils";
+import { basename, extname } from "@/lib/utils";
 import type { FileNode, LoadedFile } from "@/types";
 
 export interface RustFileEntry {
@@ -202,49 +202,4 @@ export async function loadFile(path: string): Promise<LoadedFile> {
     truncated,
     lossy,
   };
-}
-
-export async function resolveRelativeLink(
-  currentFilePath: string,
-  link: string,
-): Promise<string | null> {
-  if (
-    !link ||
-    link.startsWith("http://") ||
-    link.startsWith("https://") ||
-    link.startsWith("mailto:") ||
-    link.startsWith("ftp://") ||
-    link.startsWith("#")
-  ) {
-    return null;
-  }
-
-  const dir = dirname(currentFilePath);
-  const normalizedDir = dir.replace(/\\/g, "/");
-  const isUnixAbs = normalizedDir.startsWith("/");
-  const dirParts = normalizedDir.split("/").filter(Boolean);
-  const normalized = link.replace(/\\/g, "/").split("#")[0].replace(/^\.\//, "");
-
-  if (normalized.startsWith("/")) {
-    return null;
-  }
-
-  const parts = normalized.split("/");
-  const resolvedParts = [...dirParts];
-  const root = dirParts.length > 0 ? dirParts[0] : null; // Windows drive root like C:
-
-  for (const part of parts) {
-    if (part === "..") {
-      // Never pop the drive root (last segment) on Windows-style paths.
-      if (resolvedParts.length === 0 || (root !== null && resolvedParts.length === 1)) {
-        return null;
-      }
-      resolvedParts.pop();
-    } else if (part !== "." && part !== "") {
-      resolvedParts.push(part);
-    }
-  }
-
-  if (resolvedParts.length === 0) return null;
-  return (isUnixAbs ? "/" : "") + resolvedParts.join("/");
 }

@@ -33,9 +33,11 @@ export function FindBar() {
     !activeTab.file.lossy &&
     !activeTab.file.truncated;
 
+  // Skip per-keystroke full scans on huge content — they freeze the UI.
+  const tooBig = content.length > 2_000_000;
   const matches = useMemo(
-    () => findMatches(content, findQuery, caseSensitive),
-    [findQuery, content, caseSensitive],
+    () => (tooBig ? [] : findMatches(content, findQuery, caseSensitive)),
+    [tooBig, findQuery, content, caseSensitive],
   );
 
   useEffect(() => {
@@ -51,14 +53,31 @@ export function FindBar() {
       if (matches.length === 0) return;
       const clamped = ((idx % matches.length) + matches.length) % matches.length;
       const pos = matches[clamped];
-      const viewer = document.querySelector("[data-viewer-content]");
-      if (viewer) {
-        const total = viewer.scrollHeight;
-        const ratio = content.length > 0 ? pos / content.length : 0;
-        viewer.scrollTop = Math.min(ratio * total, total);
+      // Scope to the ACTIVE tab — keep-alive keeps hidden viewers mounted.
+      const viewer = activeTabId
+        ? (document
+            .querySelector(`[data-tab="${CSS.escape(activeTabId)}"]`)
+            ?.querySelector("[data-viewer-content]") ?? null)
+        : document.querySelector("[data-viewer-content]");
+      if (!viewer) return;
+      const line = content.slice(0, pos).split("\n").length;
+      const ta = viewer.querySelector("textarea");
+      if (ta) {
+        const lh = Number.parseFloat(getComputedStyle(ta).lineHeight) || 20;
+        ta.scrollTop = Math.max(0, (line - 1) * lh + 16 - ta.clientHeight / 3);
+        return;
       }
+      const codeLine = viewer.querySelectorAll<HTMLElement>(".code-line")[line - 1];
+      if (codeLine) {
+        codeLine.scrollIntoView({ block: "center" });
+        return;
+      }
+      // Media/other viewers: approximate ratio scroll.
+      const total = viewer.scrollHeight;
+      const ratio = content.length > 0 ? pos / content.length : 0;
+      viewer.scrollTop = Math.min(ratio * total, total);
     },
-    [matches, content.length],
+    [matches, content, activeTabId],
   );
 
   const handleNext = () => {
@@ -103,6 +122,17 @@ export function FindBar() {
     }
   };
 
+  const handleReplaceKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      handleClose();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (e.shiftKey || e.altKey) replaceAll();
+      else replaceCurrent();
+    }
+  };
+
   if (!findOpen) return null;
 
   return (
@@ -142,7 +172,9 @@ export function FindBar() {
           {matches.length > 0
             ? `${currentIndex + 1} of ${matches.length}`
             : findQuery
-              ? "No results"
+              ? tooBig
+                ? "File too large"
+                : "No results"
               : ""}
         </span>
 
@@ -182,6 +214,7 @@ export function FindBar() {
           <Input
             value={replacement}
             onChange={(e) => setReplacement(e.target.value)}
+            onKeyDown={handleReplaceKeyDown}
             placeholder={canReplace ? "Replace with" : "Read-only file"}
             disabled={!canReplace}
             className="h-8 w-52 rounded-md border border-border bg-muted/50 text-sm shadow-none focus-visible:ring-1"

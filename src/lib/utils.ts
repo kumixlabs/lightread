@@ -21,7 +21,9 @@ export function dirname(path: string): string {
   const normalized = path.replace(/\\/g, "/");
   const idx = normalized.lastIndexOf("/");
   if (idx === -1) return "";
-  return path.substring(0, idx);
+  // Slice the NORMALIZED string — slicing the original leaks a trailing `\`
+  // when separator counts differ between the two forms.
+  return normalized.slice(0, idx);
 }
 
 export function extname(path: string): string {
@@ -43,6 +45,36 @@ export function relativePath(fullPath: string, basePath: string): string {
 
 export function joinPath(base: string, relative: string): string {
   return `${base.replace(/\\/g, "/").replace(/\/$/, "")}/${relative}`;
+}
+
+/**
+ * Resolve a relative link ("./x", "../y") against a file path → normalized
+ * `/`-separated path. Returns null for URLs, anchors, absolute links, or links
+ * that escape the root/drive. Sync core shared by markdown links and images.
+ */
+export function resolveRelative(currentFilePath: string, link: string): string | null {
+  if (!link || /^(https?|mailto|ftp|asset|data):/i.test(link) || link.startsWith("#")) {
+    return null;
+  }
+  const normalizedDir = dirname(currentFilePath).replace(/\\/g, "/");
+  const isUnixAbs = normalizedDir.startsWith("/");
+  const dirParts = normalizedDir.split("/").filter(Boolean);
+  const normalized = link.replace(/\\/g, "/").split("#")[0].replace(/^\.\//, "");
+  if (normalized.startsWith("/")) return null;
+  const parts = normalized.split("/");
+  const resolvedParts = [...dirParts];
+  const root = dirParts.length > 0 ? dirParts[0] : null; // Windows drive root like C:
+  for (const part of parts) {
+    if (part === "..") {
+      // Never pop the drive root (first segment) on Windows-style paths.
+      if (resolvedParts.length === 0 || (root !== null && resolvedParts.length === 1)) return null;
+      resolvedParts.pop();
+    } else if (part !== "." && part !== "") {
+      resolvedParts.push(part);
+    }
+  }
+  if (resolvedParts.length === 0) return null;
+  return (isUnixAbs ? "/" : "") + resolvedParts.join("/");
 }
 
 export function findMatches(content: string, query: string, caseSensitive: boolean): number[] {

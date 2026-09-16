@@ -5,7 +5,7 @@ import { Dialog, DialogContent } from "@kumix/ui/ui/dialog";
 import { Input } from "@kumix/ui/ui/input";
 import { readDirectory } from "@/lib/tauri-api";
 import { cn } from "@/lib/utils";
-import { useStore } from "@/stores/app-store";
+import { markTreeRead, useStore } from "@/stores/app-store";
 import type { FileNode } from "@/types";
 
 function flattenTree(nodes: FileNode[]): FileNode[] {
@@ -62,20 +62,24 @@ export function QuickOpen() {
   }, [open]);
 
   // Deep index: workspace.tree is depth-1 (lazy); quick open needs the full
-  // tree. Rust skips ignored dirs (.git, node_modules...).
+  // tree. Rust skips ignored dirs (.git, node_modules...). Refetched when the
+  // tree changes (treeVersion) so new files show up.
   // ponytail: depth 8 covers real projects; incremental FS index if this ever gets slow.
-  const [deepTree, setDeepTree] = useState<FileNode[] | null>(null);
+  const treeVersion = useStore((s) => s.workspace.treeVersion);
+  const [deepIndex, setDeepIndex] = useState<{ version: number; tree: FileNode[] } | null>(null);
+  // Version-keyed: a tree change invalidates the index and triggers refetch.
+  const deepTree = deepIndex?.version === treeVersion ? deepIndex.tree : null;
   useEffect(() => {
-    setDeepTree(null);
-    if (!open || !rootPath) return;
+    if (!open || !rootPath || deepTree) return;
     let cancelled = false;
+    markTreeRead();
     readDirectory(rootPath, 8)
-      .then((t) => !cancelled && setDeepTree(t))
+      .then((t) => !cancelled && setDeepIndex({ version: treeVersion, tree: t }))
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [open, rootPath]);
+  }, [open, rootPath, deepTree, treeVersion]);
 
   const items = useMemo(() => {
     if (rootPath && tree.length > 0) {
@@ -107,9 +111,10 @@ export function QuickOpen() {
   }, [items, query]);
 
   // Query changed → filtered list changed → stale selection would pick the wrong file.
-  useEffect(() => {
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
     setSelectedIndex(0);
-  }, []);
+  };
 
   const select = useCallback(
     (item: { path: string } | undefined) => {
@@ -142,7 +147,7 @@ export function QuickOpen() {
           <Input
             ref={inputRef}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => handleQueryChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={rootPath ? "Search files by name..." : "Recent files..."}
             className="h-6 border-0 px-0 text-base shadow-none focus-visible:ring-0"

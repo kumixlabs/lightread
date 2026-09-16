@@ -43,21 +43,21 @@ export function FileTree() {
   // state, invisible to filterTree). Fetch full tree once, only when the user
   // actually searches.
   // ponytail: depth 8 like Quick Open; incremental FS index if this ever gets slow.
-  const [deepTree, setDeepTree] = useState<FileNode[] | null>(null);
-  useEffect(() => {
-    setDeepTree(null);
-  }, []);
+  const treeVersion = useStore((s) => s.workspace.treeVersion);
+  const [deepIndex, setDeepIndex] = useState<{ version: number; tree: FileNode[] } | null>(null);
+  // Version-keyed: a tree change invalidates the index and triggers refetch.
+  const deepTree = deepIndex?.version === treeVersion ? deepIndex.tree : null;
   useEffect(() => {
     if (!fileSearch.trim() || !rootPath || deepTree) return;
     let cancelled = false;
     markTreeRead();
     readDirectory(rootPath, 8)
-      .then((t) => !cancelled && setDeepTree(t))
+      .then((t) => !cancelled && setDeepIndex({ version: treeVersion, tree: t }))
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [fileSearch, rootPath, deepTree]);
+  }, [fileSearch, rootPath, deepTree, treeVersion]);
   const searchTree = deepTree ?? tree;
   const activeTabId = useStore((s) => s.activeTabId);
 
@@ -76,11 +76,13 @@ export function FileTree() {
     useStore.setState((s) => {
       const next = new Set(s.expandedDirs);
       let added = false;
-      for (const a of ancestors)
-        if (!next.has(a)) {
-          next.add(a);
+      for (const a of ancestors) {
+        const posix = a.replace(/\\/g, "/");
+        if (!next.has(posix)) {
+          next.add(posix);
           added = true;
         }
+      }
       return added ? { expandedDirs: next } : {};
     });
   }, [activeTabId, rootPath]);
@@ -105,6 +107,12 @@ export function FileTree() {
     </ContextMenuContent>
   );
 
+  const isCreatingInRoot =
+    creating &&
+    rootPath &&
+    creating.parentPath.replace(/\\/g, "/").replace(/\/$/, "") ===
+      rootPath.replace(/\\/g, "/").replace(/\/$/, "");
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">
@@ -113,19 +121,15 @@ export function FileTree() {
     );
   }
 
-  if (filteredTree.length === 0) {
-    return (
-      <div className="px-4 py-8 text-center text-muted-foreground text-sm">
-        {fileSearch ? `No files matching "${fileSearch}"` : "No files found"}
-      </div>
-    );
-  }
-
   return (
     <ContextMenu>
-      <ContextMenuTrigger>
-        <div className="py-1">
-          {creating?.parentPath === rootPath && (
+      <ContextMenuTrigger className="flex min-h-full flex-1 flex-col">
+        <div
+          className="flex min-h-full flex-1 flex-col py-1"
+          role="tree"
+          aria-label={rootName ?? "Files"}
+        >
+          {isCreatingInRoot && (
             <NameInput
               depth={0}
               placeholder={creating.type === "file" ? "file name" : "folder name"}
@@ -133,9 +137,14 @@ export function FileTree() {
               onCancel={cancelFsEdit}
             />
           )}
-          {filteredTree.map((node) => (
-            <FileTreeNode key={node.path} node={node} depth={0} />
-          ))}
+          {filteredTree.length === 0 ? (
+            <div className="flex flex-1 items-center justify-center px-4 py-8 text-center text-muted-foreground text-sm">
+              {fileSearch ? `No files matching "${fileSearch}"` : "No files found"}
+            </div>
+          ) : (
+            filteredTree.map((node) => <FileTreeNode key={node.path} node={node} depth={0} />)
+          )}
+          <div className="min-h-16 flex-1" />
         </div>
       </ContextMenuTrigger>
       {newMenu}

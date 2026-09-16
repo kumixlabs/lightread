@@ -10,7 +10,7 @@ pub struct SearchMatch {
 }
 
 #[tauri::command]
-pub fn search_in_project(
+pub async fn search_in_project(
     root: String,
     query: String,
     case_sensitive: bool,
@@ -18,21 +18,45 @@ pub fn search_in_project(
     if query.is_empty() {
         return Ok(Vec::new());
     }
-    let root_path = Path::new(&root);
-    if !root_path.is_dir() {
-        return Err("Root is not a directory".to_string());
-    }
-    let mut results = Vec::new();
-    search_dir(root_path, &query, case_sensitive, &mut results, 500);
-    Ok(results)
+    // Offload to a blocking thread so large repos don't stall the Tauri thread pool.
+    tauri::async_runtime::spawn_blocking(move || {
+        let root_path = Path::new(&root);
+        if !root_path.is_dir() {
+            return Err("Root is not a directory".to_string());
+        }
+        let mut results = Vec::new();
+        let query_lower = if case_sensitive {
+            String::new()
+        } else {
+            query.to_lowercase()
+        };
+        let mut seen = std::collections::HashSet::new();
+        if let Ok(canon) = root_path.canonicalize() {
+            seen.insert(canon);
+        }
+        search_dir(
+            root_path,
+            &query,
+            &query_lower,
+            case_sensitive,
+            &mut results,
+            500,
+            &mut seen,
+        );
+        Ok(results)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 fn search_dir(
     dir: &Path,
     query: &str,
+    query_lower: &str,
     case_sensitive: bool,
     results: &mut Vec<SearchMatch>,
     max_results: usize,
+    seen: &mut std::collections::HashSet<std::path::PathBuf>,
 ) {
     if results.len() >= max_results {
         return;
@@ -52,7 +76,18 @@ fn search_dir(
         let path = entry.path();
         let is_dir = entry.file_type().map(|t| t.is_dir()).unwrap_or(false);
         if is_dir {
-            search_dir(&path, query, case_sensitive, results, max_results);
+            let canon = path.canonicalize().unwrap_or_else(|_| path.clone());
+            if seen.insert(canon) {
+                search_dir(
+                    &path,
+                    query,
+                    query_lower,
+                    case_sensitive,
+                    results,
+                    max_results,
+                    seen,
+                );
+            }
         } else {
             let metadata = match entry.metadata() {
                 Ok(m) => m,
@@ -61,7 +96,7 @@ fn search_dir(
             if metadata.len() > 5 * 1024 * 1024 {
                 continue;
             }
-            search_file(&path, query, case_sensitive, results, max_results);
+            search_file(&path, query, query_lower, case_sensitive, results, max_results);
         }
     }
 }
@@ -69,6 +104,7 @@ fn search_dir(
 fn search_file(
     path: &Path,
     query: &str,
+    query_lower: &str,
     case_sensitive: bool,
     results: &mut Vec<SearchMatch>,
     max_results: usize,
@@ -81,21 +117,17 @@ fn search_file(
         return;
     }
     let content = String::from_utf8_lossy(&bytes);
-    let search_str = if case_sensitive {
-        query.to_string()
-    } else {
-        query.to_lowercase()
-    };
     for (line_num, line) in content.lines().enumerate() {
         if results.len() >= max_results {
             return;
         }
-        let line_cmp = if case_sensitive {
-            line.to_string()
+        // Fast path: case-sensitive search needs no per-line allocation.
+        let hit = if case_sensitive {
+            line.contains(&query[..])
         } else {
-            line.to_lowercase()
+            line.to_lowercase().contains(query_lower)
         };
-        if line_cmp.contains(&search_str) {
+        if hit {
             let trimmed = if line.len() > 300 {
                 let mut end = 300;
                 while !line.is_char_boundary(end) {

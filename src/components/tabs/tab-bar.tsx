@@ -1,7 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import {
-  Braces,
-  FileCode2,
   FileImage,
   FileText,
   FileVideo,
@@ -23,17 +21,14 @@ import {
 } from "@kumix/ui/motion/context-menu";
 import { ScrollArea, ScrollBar } from "@kumix/ui/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@kumix/ui/ui/tooltip";
+import { getFileIcon as getExtFileIcon } from "@/components/explorer/file-tree-node";
 import { AUDIO_EXTENSIONS } from "@/lib/file-types/registry";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/stores/app-store";
 import type { LoadedFile } from "@/types";
 
 function getFileIcon(file: LoadedFile): LucideIcon {
-  const ext = file.extension.toLowerCase();
-  if ([".json", ".jsonc"].includes(ext)) return Braces;
   switch (file.viewerType) {
-    case "code":
-      return FileCode2;
     case "markdown":
     case "text":
       return FileText;
@@ -47,7 +42,8 @@ function getFileIcon(file: LoadedFile): LucideIcon {
     case "unsupported":
       return FileWarning;
     default:
-      return FileCode2;
+      // Extension-based icon shared with the explorer tree (code/data files).
+      return getExtFileIcon(file.name);
   }
 }
 
@@ -58,6 +54,9 @@ export function TabBar() {
   const closeTab = useStore((s) => s.closeTab);
   const closeOtherTabs = useStore((s) => s.closeOtherTabs);
   const closeAllTabs = useStore((s) => s.closeAllTabs);
+  const moveTab = useStore((s) => s.moveTab);
+
+  const dragIndex = useRef<number | null>(null);
 
   const scrollerRef = useRef<HTMLElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
@@ -94,11 +93,15 @@ export function TabBar() {
   if (tabs.length === 0) return null;
 
   return (
-    <div className="flex h-9 shrink-0 items-stretch border-border border-b bg-muted/40">
+    <div
+      role="tablist"
+      aria-label="Open files"
+      className="flex h-9 shrink-0 items-stretch border-border border-b bg-muted/40"
+    >
       <div ref={scrollAreaRef} className="min-w-0 flex-1">
         <ScrollArea className="h-9">
           <div className="flex items-stretch">
-            {tabs.map((tab) => {
+            {tabs.map((tab, index) => {
               const Icon = getFileIcon(tab.file);
               const isActive = tab.id === activeTabId;
               const isDirty = tab.draft !== undefined && tab.draft !== tab.file.content;
@@ -109,6 +112,22 @@ export function TabBar() {
                       role="tab"
                       tabIndex={0}
                       aria-selected={isActive}
+                      draggable
+                      onDragStart={() => {
+                        dragIndex.current = index;
+                      }}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (dragIndex.current !== null && dragIndex.current !== index) {
+                          const draggedId = tabs[dragIndex.current]?.id;
+                          if (draggedId) moveTab(draggedId, index);
+                        }
+                        dragIndex.current = null;
+                      }}
+                      onDragEnd={() => {
+                        dragIndex.current = null;
+                      }}
                       onClick={() => setActiveTab(tab.id)}
                       onMouseDown={(e) => {
                         if (e.button === 1) {

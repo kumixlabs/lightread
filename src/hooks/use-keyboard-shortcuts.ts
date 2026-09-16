@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { pickFile, pickFolder } from "@/lib/tauri-api";
-import { useStore } from "@/stores/app-store";
+import { DEFAULT_SETTINGS, useStore } from "@/stores/app-store";
 
 export function useKeyboardShortcuts() {
   useEffect(() => {
@@ -11,15 +11,18 @@ export function useKeyboardShortcuts() {
       const ctrl = e.ctrlKey || e.metaKey;
       const shift = e.shiftKey;
       const key = e.key.toLowerCase(); // CapsLock/layout must not break letters
+      // Dialog inputs own their keystrokes — don't steal open/find shortcuts
+      // while a modal (quick open, settings, project search) has focus.
+      const inModal = s.quickOpenOpen || s.settingsOpen || s.projectSearchOpen;
 
-      if (ctrl && shift && key === "o") {
+      if (ctrl && shift && key === "o" && !inModal) {
         e.preventDefault();
         pickFolder().then((p) => {
           if (p) s.openFolder(p);
         });
         return;
       }
-      if (ctrl && !shift && key === "o") {
+      if (ctrl && !shift && key === "o" && !inModal) {
         e.preventDefault();
         pickFile().then((p) => {
           if (p) s.openFile(p);
@@ -46,32 +49,32 @@ export function useKeyboardShortcuts() {
         }
         return;
       }
-      if (ctrl && !shift && key === "p") {
+      if (ctrl && !shift && key === "p" && !inModal) {
         e.preventDefault();
         s.setQuickOpenOpen(true);
         return;
       }
-      if (ctrl && !shift && key === "f") {
+      if (ctrl && !shift && key === "f" && !inModal) {
         e.preventDefault();
         s.setFindOpen(true);
         return;
       }
-      if (ctrl && !shift && key === "h") {
+      if (ctrl && !shift && key === "h" && !inModal) {
         e.preventDefault();
         s.setFindOpen(true, true);
         return;
       }
-      if (ctrl && shift && key === "f") {
+      if (ctrl && shift && key === "f" && !inModal) {
         e.preventDefault();
         s.setProjectSearchOpen(true);
         return;
       }
-      if (ctrl && !shift && key === "w") {
+      if (ctrl && !shift && key === "w" && !inModal) {
         e.preventDefault();
         if (s.activeTabId) s.closeTab(s.activeTabId);
         return;
       }
-      if (ctrl && (e.code === "Tab" || e.key === "Tab")) {
+      if (ctrl && (e.code === "Tab" || e.key === "Tab") && !inModal) {
         e.preventDefault();
         if (shift) s.prevTab();
         else s.nextTab();
@@ -80,19 +83,21 @@ export function useKeyboardShortcuts() {
       if (ctrl && (e.key === "=" || e.key === "+" || e.key === "-" || e.key === "0")) {
         const { fontSize } = s.settings;
         const next =
-          e.key === "0" ? 14 : Math.min(28, Math.max(10, fontSize + (e.key === "-" ? -1 : 1)));
+          e.key === "0"
+            ? DEFAULT_SETTINGS.fontSize
+            : Math.min(28, Math.max(10, fontSize + (e.key === "-" ? -1 : 1)));
         if (next !== fontSize) {
           e.preventDefault();
           s.updateSettings({ fontSize: next });
         }
         return;
       }
-      if (ctrl && key === "b") {
+      if (ctrl && key === "b" && !inModal) {
         e.preventDefault();
         s.toggleSidebar();
         return;
       }
-      if (ctrl && e.key === ",") {
+      if (ctrl && e.key === "," && !inModal) {
         e.preventDefault();
         s.setSettingsOpen(true);
         return;
@@ -104,28 +109,32 @@ export function useKeyboardShortcuts() {
         return;
       }
       if (e.key === "Escape") {
-        // Fullscreen first: Esc always returns to windowed like native apps.
+        // Fullscreen first: Esc returns to windowed and consumes the key —
+        // dialogs must not also close underneath the un-fullscreen animation.
         const win = getCurrentWindow();
         win.isFullscreen().then((fs) => {
-          if (fs) win.setFullscreen(false);
+          if (fs) {
+            win.setFullscreen(false);
+            return;
+          }
+          if (s.settingsOpen) {
+            s.setSettingsOpen(false);
+            return;
+          }
+          if (s.pendingClose) return; // dialog handles its own keys
+          if (s.projectSearchOpen) {
+            s.setProjectSearchOpen(false);
+            return;
+          }
+          if (s.quickOpenOpen) {
+            s.setQuickOpenOpen(false);
+            return;
+          }
+          if (s.findOpen) {
+            s.setFindOpen(false);
+          }
         });
-        if (s.settingsOpen) {
-          s.setSettingsOpen(false);
-          return;
-        }
-        if (s.pendingClose) return; // dialog handles its own keys
-        if (s.projectSearchOpen) {
-          s.setProjectSearchOpen(false);
-          return;
-        }
-        if (s.quickOpenOpen) {
-          s.setQuickOpenOpen(false);
-          return;
-        }
-        if (s.findOpen) {
-          s.setFindOpen(false);
-          return;
-        }
+        return;
       }
     };
     window.addEventListener("keydown", handler);

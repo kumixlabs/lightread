@@ -58,6 +58,9 @@ export function SvgViewer({ content, tabId, draft, readOnly, onCursor }: SvgView
             {/* ponytail: srcDoc iframe defaults 300×150; svg fills via viewBox or
                 stretches. Full-size iframe keeps it sandboxed while using the
                 whole viewport. Upgrade path: zoom controls if ever needed. */}
+            {/* SECURITY: sandbox="" (no permissions) — SVG content is user-supplied
+                and may contain <script>, event handlers, or external references.
+                Never add allow-scripts or allow-same-origin. */}
             <iframe
               srcDoc={`<!DOCTYPE html><html><head><style>html,body{margin:0;height:100%;background:transparent}body{display:flex;align-items:center;justify-content:center;overflow:hidden}svg{width:100%;height:100%;max-width:100%;max-height:100%}svg:not([viewBox]){width:auto;height:auto}</style></head><body>${draft ?? content}</body></html>`}
               sandbox=""

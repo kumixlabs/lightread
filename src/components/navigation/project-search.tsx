@@ -74,8 +74,9 @@ export function ProjectSearch() {
     }
   };
 
-  const handleClickResult = (path: string) => {
+  const handleClickResult = (path: string, line: number) => {
     openFile(path);
+    useStore.getState().revealLine(path, line); // ViewerRouter scrolls once active
     setOpen(false);
   };
 
@@ -123,7 +124,7 @@ export function ProjectSearch() {
             {loading
               ? "Searching..."
               : searched
-                ? `${results.length} result${results.length === 1 ? "" : "s"}`
+                ? `${results.length} result${results.length === 1 ? "" : "s"}${results.length >= 500 ? " (showing first 500)" : ""}`
                 : "Type to search"}
           </span>
         </div>
@@ -149,7 +150,7 @@ export function ProjectSearch() {
                   {matches.map((match, idx) => (
                     <button
                       key={`${match.line}-${idx}`}
-                      onClick={() => handleClickResult(match.path)}
+                      onClick={() => handleClickResult(match.path, match.line)}
                       className="flex w-full items-baseline gap-3 px-4 py-1.5 text-left transition-colors hover:bg-accent"
                     >
                       <span className="min-w-10 text-right font-mono text-muted-foreground/50 text-xs">

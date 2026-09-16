@@ -3,6 +3,7 @@ import { Check, Copy, Eye, Pencil } from "lucide-react";
 import type { Highlighter } from "shiki";
 
 import { TextEditor } from "@/components/viewers/text-editor";
+import { useIsDark } from "@/hooks/use-is-dark";
 import { CORE_LANGS, ensureLang, ensureTheme, getHighlighter } from "@/lib/shiki";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/stores/app-store";
@@ -40,7 +41,7 @@ export function CodeViewer({
   onCursor,
 }: CodeViewerProps) {
   const [highlighter, setHighlighter] = useState<Highlighter | null>(null);
-  const [isDark, setIsDark] = useState(false);
+  const isDark = useIsDark();
   const [copied, setCopied] = useState(false);
   const [themeReady, setThemeReady] = useState(true);
   const [highlightFailed, setHighlightFailed] = useState(false);
@@ -56,20 +57,29 @@ export function CodeViewer({
   };
   const copyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   // View mode shows the draft (unsaved edits) so it never lags behind edits.
-  const displayContent = draft ?? content;
+  // Minified JSON is pretty-printed for VIEW ONLY — the edit surface always
+  // gets the raw file bytes so saving never silently reformats the file.
+  const viewContent = useMemo(() => {
+    if (
+      language === "json" &&
+      draft === undefined &&
+      !content.includes("\n") &&
+      content.length < 2_000_000
+    ) {
+      try {
+        return JSON.stringify(JSON.parse(content), null, 2);
+      } catch {
+        // not valid JSON — show as-is
+      }
+    }
+    return draft ?? content;
+  }, [language, draft, content]);
+  const editContent = draft ?? content;
 
   useEffect(() => {
     getHighlighter()
       .then(setHighlighter)
       .catch(() => setHighlightFailed(true));
-  }, []);
-
-  useEffect(() => {
-    const check = () => setIsDark(document.documentElement.classList.contains("dark"));
-    check();
-    const observer = new MutationObserver(check);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
   }, []);
 
   const activeTheme = codeTheme === "auto" ? (isDark ? "github-dark" : "github-light") : codeTheme;
@@ -91,7 +101,7 @@ export function CodeViewer({
   const { lines } = useMemo(() => {
     if (highlightFailed)
       return {
-        lines: displayContent
+        lines: viewContent
           .split("\n")
           .map((l, i) => ({ num: i + 1, html: escapeHtml(l) || "&#8203;" })),
       };
@@ -100,7 +110,7 @@ export function CodeViewer({
     const loaded = highlighter.getLoadedLanguages();
     const lang = loaded.includes(language) ? language : "plaintext";
     try {
-      const result = highlighter.codeToTokens(displayContent, {
+      const result = highlighter.codeToTokens(viewContent, {
         lang: lang as never,
         theme: activeTheme as never,
       });
@@ -121,15 +131,15 @@ export function CodeViewer({
       };
     } catch {
       return {
-        lines: displayContent
+        lines: viewContent
           .split("\n")
           .map((l, i) => ({ num: i + 1, html: escapeHtml(l) || "&#8203;" })),
       };
     }
-  }, [highlighter, highlightFailed, displayContent, language, activeTheme, themeReady, langReady]);
+  }, [highlighter, highlightFailed, viewContent, language, activeTheme, themeReady, langReady]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(displayContent);
+    navigator.clipboard.writeText(viewContent);
     setCopied(true);
     clearTimeout(copyTimer.current);
     copyTimer.current = setTimeout(() => setCopied(false), 1500);
@@ -156,38 +166,34 @@ export function CodeViewer({
           <Eye className="size-3.5" />
           View
         </button>
-        <TextEditor
-          tabId={tabId}
-          content={displayContent}
-          onCursor={onCursor}
-          readOnly={readOnly}
-        />
+        <TextEditor tabId={tabId} content={editContent} onCursor={onCursor} readOnly={readOnly} />
       </div>
     );
   }
 
   return (
     <div className="relative h-full overflow-hidden bg-background">
-      {tabId ? (
-        <button
-          onClick={() => setEditing(true)}
-          className="absolute top-3 right-3 z-10 inline-flex items-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 py-1 text-muted-foreground text-xs shadow-sm backdrop-blur transition-all hover:bg-accent hover:text-foreground"
-        >
-          <Pencil className="size-3.5" />
-          Edit
-        </button>
-      ) : (
+      <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1.5">
+        {tabId && !readOnly && (
+          <button
+            onClick={() => setEditing(true)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 py-1 text-muted-foreground text-xs shadow-sm backdrop-blur transition-all hover:bg-accent hover:text-foreground"
+          >
+            <Pencil className="size-3.5" />
+            Edit
+          </button>
+        )}
         <button
           onClick={handleCopy}
           className={cn(
-            "absolute top-3 right-3 z-10 inline-flex items-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 py-1 text-muted-foreground text-xs shadow-sm backdrop-blur transition-all hover:bg-accent hover:text-foreground",
+            "inline-flex items-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 py-1 text-muted-foreground text-xs shadow-sm backdrop-blur transition-all hover:bg-accent hover:text-foreground",
             copied && "text-green-500",
           )}
         >
           {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
           {copied ? "Copied" : "Copy"}
         </button>
-      )}
+      </div>
       <div
         className={cn("h-full overflow-auto", wordWrap ? "overflow-x-hidden" : "overflow-x-auto")}
         data-viewer-content

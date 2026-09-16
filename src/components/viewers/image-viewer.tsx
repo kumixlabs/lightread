@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { Maximize, Minimize, RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
+import { Maximize, Minimize, ZoomIn, ZoomOut } from "lucide-react";
 
 import { cn, formatBytes } from "@/lib/utils";
 import type { LoadedFile } from "@/types";
@@ -51,6 +51,17 @@ export function ImageViewer({ file }: ImageViewerProps) {
     }
   }, [loading, dims, userZoomed, fitToWindow]);
 
+  // Window resizes re-fit unless the user chose a zoom of their own.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const ro = new ResizeObserver(() => {
+      if (!userZoomed) fitToWindow();
+    });
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [userZoomed, fitToWindow]);
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if (zoom <= 1) return;
     setDragging(true);
@@ -66,6 +77,13 @@ export function ImageViewer({ file }: ImageViewerProps) {
   };
 
   const handleMouseUp = () => setDragging(false);
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    setUserZoomed(true);
+    const factor = e.deltaY < 0 ? 1.15 : 0.85;
+    setZoom((z) => Math.min(Math.max(z * factor, 0.1), 10));
+  };
 
   const zoomIn = () => {
     setUserZoomed(true);
@@ -121,13 +139,6 @@ export function ImageViewer({ file }: ImageViewerProps) {
           >
             <Maximize className="size-4" />
           </button>
-          <button
-            onClick={reset}
-            className="inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            title="Reset"
-          >
-            <RotateCcw className="size-4" />
-          </button>
         </div>
         <span className="text-muted-foreground text-xs">
           {dims ? `${dims.w} \u00D7 ${dims.h} px` : ""}
@@ -145,6 +156,7 @@ export function ImageViewer({ file }: ImageViewerProps) {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
       >
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center">

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { check } from "@tauri-apps/plugin-updater";
 import { FileUp, FolderDown } from "lucide-react";
 
 import { TooltipProvider } from "@kumix/ui/ui/tooltip";
@@ -99,6 +100,38 @@ export default function App() {
       unlisten = fn;
     });
     return () => unlisten?.();
+  }, []);
+
+  // macOS: Finder "Open with LightRead" while running (single-instance plugin
+  // is Windows/Linux only — Rust forwards the file URLs as mac-open events).
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    listen<string[]>("mac-open", async (e) => {
+      for (const p of e.payload) {
+        const meta = await getFileMetadata(p).catch(() => null);
+        if (meta?.is_dir) {
+          await useStore.getState().openFolder(p);
+        } else if (meta) {
+          await useStore.getState().openFile(p);
+        }
+      }
+    }).then((fn) => {
+      unlisten = fn;
+    });
+    return () => unlisten?.();
+  }, []);
+
+  // Silent update check once per launch; result surfaces in the status bar.
+  useEffect(() => {
+    let cancelled = false;
+    check()
+      .then((u) => {
+        if (!cancelled && u?.available) useStore.setState({ updateAvailable: u.version });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Intercept window close: prompt for unsaved tabs before exit.

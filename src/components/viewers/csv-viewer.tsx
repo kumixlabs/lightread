@@ -1,45 +1,9 @@
 import { useMemo, useState } from "react";
-import { Code2, Table } from "lucide-react";
+import { ChevronDown, Code2, Table } from "lucide-react";
 
 import { TextEditor } from "@/components/viewers/text-editor";
+import { parseCsv } from "@/lib/csv";
 import { cn } from "@/lib/utils";
-
-/** RFC 4180-lite parser: quotes, escaped quotes, commas and newlines inside quotes. */
-function parseCsv(text: string, delimiter: string): string[][] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (inQuotes) {
-      if (c === '"') {
-        if (text[i + 1] === '"') {
-          field += '"';
-          i++;
-        } else inQuotes = false;
-      } else field += c;
-    } else if (c === '"') {
-      inQuotes = true;
-    } else if (c === delimiter) {
-      row.push(field);
-      field = "";
-    } else if (c === "\n") {
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = "";
-    } else if (c !== "\r") {
-      field += c;
-    }
-  }
-  if (field.length > 0 || row.length > 0) {
-    row.push(field);
-    rows.push(row);
-  }
-  return rows;
-}
 
 interface CsvViewerProps {
   content: string;
@@ -63,6 +27,9 @@ export function CsvViewer({ content, tabId, draft, fontSize, readOnly, onCursor 
 
   const rows = useMemo(() => parseCsv(effective, delimiter), [effective, delimiter]);
   const [header, ...body] = rows;
+  // Render cap: 100k-row CSVs must not freeze the DOM (Load more grows it).
+  const [rowLimit, setRowLimit] = useState(1000);
+  const visibleBody = body.slice(0, rowLimit);
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -114,7 +81,7 @@ export function CsvViewer({ content, tabId, draft, fontSize, readOnly, onCursor 
               </thead>
             )}
             <tbody>
-              {body.map((r, ri) => (
+              {visibleBody.map((r, ri) => (
                 <tr key={ri} className={cn(ri % 2 === 1 && "bg-muted/40")}>
                   {r.map((cell, ci) => (
                     <td key={ci} className="whitespace-nowrap border-border px-3 py-1.5">
@@ -125,6 +92,15 @@ export function CsvViewer({ content, tabId, draft, fontSize, readOnly, onCursor 
               ))}
             </tbody>
           </table>
+          {body.length > rowLimit && (
+            <button
+              onClick={() => setRowLimit((l) => l + 5000)}
+              className="mx-auto mt-4 flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-muted-foreground text-xs transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <ChevronDown className="size-3.5" />
+              Show more rows ({(body.length - rowLimit).toLocaleString()} remaining)
+            </button>
+          )}
         </div>
       )}
     </div>

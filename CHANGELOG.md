@@ -2,6 +2,36 @@
 
 All notable changes to LightRead will be documented in this file.
 
+## 0.2.1 - 16-09-2026
+
+### Added
+
+- **Sidebar root context menu**: right-click anywhere in the sidebar / file tree empty space to open the workspace root context menu (New File / New Folder).
+- **Native window drag-and-drop**: drag files or folders directly into the app window to open them (folders become workspace root, files open as new tabs) with visual drop zone feedback.
+- **Unsaved changes exit intercept**: closing the window prompts when tabs have unsaved edits (Save / Don't save / Cancel) to prevent accidental data loss.
+- **Async project search**: project search offloaded to a worker thread pool (`spawn_blocking`) so searching large repositories never blocks the main UI thread.
+- **Symlink cycle guard**: directory traversal and project search track canonical paths (`seen: HashSet<PathBuf>`) to prevent infinite recursion and stack overflows on symlinked directories.
+- **Mouse wheel zoom**: smooth mouse wheel zoom support in the image viewer.
+- **Unit test suite**: added tests for CSV parsing, file type registry detection, and path utility helpers (`bun test`).
+
+### Fixed
+
+- **Tab drag-and-drop reorder**: fixed inverted drop target calculation where dragging a tab moved the wrong tab.
+- **Folder rename retargeting**: renaming a folder now updates all child tabs, nested file watchers, and expanded directory states.
+- **Cross-platform path normalization**: normalized POSIX/Windows backslash separators for tree node expansion, active tab tracking, and breadcrumb clicks.
+- **Text editor undo history**: Tab key indentation now preserves native browser undo/redo history (`Ctrl+Z`).
+- **Viewer memory leak**: pruned unmounted tabs from keep-alive viewer set upon tab closure so closed tabs don't accumulate in the DOM.
+- **`selfWrites` unbounded map**: auto-prunes expired entries (>4s) after 50 records to prevent memory leakage in long-running sessions.
+- **Sequential directory expansion**: replaced concurrent `Promise.all` in `expandAll` with sequential traversal to prevent I/O stampede and thread exhaustion on large workspaces.
+- **Conflict between TypeScript and MPEG-TS**: removed ambiguous `.ts` video extension from media detection.
+- **Tightened asset protocol scope**: removed overly broad static `$HOME/**` scope from `tauri.conf.json`, fully delegating access control to user-authorized dynamic scoping (`grant_asset_scope`).
+
+### Changed
+
+- **File tree icons**: added dedicated `FileText` icon for `.txt`, `.text`, and `.log` files.
+- **Shared dark mode hook**: consolidated duplicated dark mode detection into `useIsDark()`.
+- **Dependencies**: updated to React 19.3, Vite 8.3, @kumix/ui 0.3.15, @kumix/utils 0.3.0, @base-ui/react 1.8.0, Lucide icons 1.46, Motion 13.3.
+
 ## 0.2.0 - 26-08-2026
 
 ### Added

@@ -1,5 +1,8 @@
 # Build commands
 - `bun install` — install deps
+- `bun test` — run unit tests
+- `bun run types:check` — typescript typecheck
+- `bun run lint` — biome check
 - `bun run build` — frontend build (tsc + vite)
 - `cargo check` — rust typecheck (run in src-tauri/)
 - `bun tauri dev` — full dev launch

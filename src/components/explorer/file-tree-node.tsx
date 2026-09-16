@@ -91,6 +91,9 @@ export function NameInput({
 }
 
 const EXT_ICON_MAP: Record<string, LucideIcon> = {
+  ".txt": FileText,
+  ".text": FileText,
+  ".log": FileText,
   ".ts": FileCode2,
   ".tsx": FileCode2,
   ".mts": FileCode2,
@@ -182,6 +185,9 @@ export function getFileIcon(name: string): LucideIcon {
 }
 
 const EXT_COLOR_MAP: Record<string, string> = {
+  ".txt": "text-slate-500",
+  ".text": "text-slate-500",
+  ".log": "text-slate-400",
   ".ts": "text-blue-500",
   ".tsx": "text-blue-500",
   ".js": "text-yellow-500",
@@ -267,8 +273,9 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps) {
   const [loadingChildren, setLoadingChildren] = useState(false);
   const treeVersion = useStore((s) => s.workspace.treeVersion);
 
-  const isExpanded = expandedDirs.has(node.path);
-  const isActive = activeTabId === node.path;
+  const isExpanded = expandedDirs.has(node.path.replace(/\\/g, "/")) || expandedDirs.has(node.path);
+  const isActive =
+    (activeTabId ? activeTabId.replace(/\\/g, "/") : "") === node.path.replace(/\\/g, "/");
   const rowRef = useRef<HTMLDivElement>(null);
 
   // Keep the active file visible when it becomes active (open/switch).
@@ -378,6 +385,8 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps) {
           <ContextMenu>
             <ContextMenuTrigger>
               <div
+                role="treeitem"
+                aria-expanded={isExpanded}
                 className="group relative flex cursor-pointer select-none items-center gap-1 py-0.75 pr-2 text-[13px] transition-colors hover:bg-sidebar-accent/50"
                 style={{ paddingLeft }}
                 onClick={handleClick}
@@ -427,14 +436,16 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps) {
         <AnimatePresence initial={false}>
           {isExpanded && (
             <motion.div key="children" {...containerMotion} className="overflow-hidden">
-              {creating?.parentPath === node.path && (
-                <NameInput
-                  depth={depth + 1}
-                  placeholder={creating.type === "file" ? "file name" : "folder name"}
-                  onCommit={(n) => commitCreate(n)}
-                  onCancel={cancelFsEdit}
-                />
-              )}
+              {creating &&
+                creating.parentPath.replace(/\\/g, "/").replace(/\/$/, "") ===
+                  node.path.replace(/\\/g, "/").replace(/\/$/, "") && (
+                  <NameInput
+                    depth={depth + 1}
+                    placeholder={creating.type === "file" ? "file name" : "folder name"}
+                    onCommit={(n) => commitCreate(n)}
+                    onCancel={cancelFsEdit}
+                  />
+                )}
               {lazyChildren && lazyChildren.length > 0 && (
                 <div>
                   {lazyChildren.map((child) => (
@@ -474,6 +485,8 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps) {
         <ContextMenuTrigger>
           <div
             ref={rowRef}
+            role="treeitem"
+            aria-selected={isActive}
             className={cn(
               "relative flex cursor-pointer select-none items-center gap-1 py-0.75 pr-2 text-[13px] transition-colors",
               isActive

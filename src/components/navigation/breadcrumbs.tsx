@@ -34,7 +34,8 @@ export function Breadcrumbs() {
 
   const handleCrumbClick = (path: string, isLast: boolean) => {
     if (isLast) return;
-    if (!expandedDirs.has(path)) toggleDir(path);
+    const posix = path.replace(/\\/g, "/");
+    if (!expandedDirs.has(posix)) toggleDir(posix);
   };
 
   if (!activeTab) return null;

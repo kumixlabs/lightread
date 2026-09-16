@@ -54,6 +54,8 @@ export function HtmlViewer({ content, tabId, draft, readOnly, onCursor }: HtmlVi
       </div>
       <div className="flex-1 overflow-hidden">
         {mode === "preview" ? (
+          // SECURITY: sandbox="" (no permissions) — HTML content is user-supplied.
+          // Never add allow-scripts or allow-same-origin.
           <iframe
             srcDoc={draft ?? content}
             sandbox=""

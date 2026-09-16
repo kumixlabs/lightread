@@ -55,26 +55,30 @@ export function TextEditor({ tabId, content, onCursor, readOnly, className }: Te
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Tab inserts 2 spaces (notepad-like, keeps focus).
+    // Tab inserts 2 spaces (notepad-like, keeps focus + preserves native undo).
     if (e.key === "Tab" && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && !readOnly) {
       e.preventDefault();
       const el = e.currentTarget;
-      const { selectionStart: s, selectionEnd: en } = el;
-      const next = `${el.value.slice(0, s)}  ${el.value.slice(en)}`;
-      updateDraft(tabId, next);
-      requestAnimationFrame(() => {
-        el.selectionStart = el.selectionEnd = s + 2;
-      });
+      if (!document.execCommand("insertText", false, "  ")) {
+        const { selectionStart: s, selectionEnd: en } = el;
+        const next = `${el.value.slice(0, s)}  ${el.value.slice(en)}`;
+        updateDraft(tabId, next);
+        requestAnimationFrame(() => {
+          el.selectionStart = el.selectionEnd = s + 2;
+        });
+      }
     }
   };
 
-  // Keep the highlight layer aligned with the textarea viewport.
+  // Keep the highlight layer aligned with the textarea viewport (including
+  // reserving the textarea's scrollbar gutter so text doesn't drift).
   const syncScroll = useCallback(() => {
     const ta = ref.current;
     const hl = highlightRef.current;
     if (ta && hl) {
       hl.scrollTop = ta.scrollTop;
       hl.scrollLeft = ta.scrollLeft;
+      hl.style.paddingRight = `${ta.offsetWidth - ta.clientWidth}px`;
     }
   }, []);
 
@@ -104,7 +108,10 @@ export function TextEditor({ tabId, content, onCursor, readOnly, className }: Te
   const sharedTypo = "p-4 font-mono";
 
   return (
-    <div className={cn("relative h-full w-full overflow-hidden bg-background", className)}>
+    <div
+      data-viewer-content
+      className={cn("relative h-full w-full overflow-hidden bg-background", className)}
+    >
       {showHighlight && (
         <div
           ref={highlightRef}

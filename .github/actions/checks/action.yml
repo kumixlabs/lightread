@@ -5,7 +5,7 @@ inputs:
   bun-version:
     description: "Pinned Bun version (keep in sync with local dev)"
     required: false
-    default: "1.4.0"
+    default: "1.4.2"
 
 runs:
   using: "composite"

@@ -5,9 +5,10 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { TextEditor } from "@/components/viewers/text-editor";
+import { useIsDark } from "@/hooks/use-is-dark";
 import { ensureLang, getHighlighter, themeForDark } from "@/lib/shiki";
-import { openInDefaultApp, resolveRelativeLink } from "@/lib/tauri-api";
-import { cn } from "@/lib/utils";
+import { openInDefaultApp } from "@/lib/tauri-api";
+import { cn, resolveRelative } from "@/lib/utils";
 import { useStore } from "@/stores/app-store";
 import type { LoadedFile } from "@/types";
 
@@ -65,18 +66,6 @@ function extractToc(md: string): TocEntry[] {
   return out;
 }
 
-function useIsDark(): boolean {
-  const [isDark, setIsDark] = useState(false);
-  useEffect(() => {
-    const check = () => setIsDark(document.documentElement.classList.contains("dark"));
-    check();
-    const observer = new MutationObserver(check);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, []);
-  return isDark;
-}
-
 export function MarkdownViewer({ file, tabId, draft, previewMode }: MarkdownViewerProps) {
   const setPreviewMode = useStore((s) => s.setPreviewMode);
   const openFile = useStore((s) => s.openFile);
@@ -98,7 +87,7 @@ export function MarkdownViewer({ file, tabId, draft, previewMode }: MarkdownView
   );
 
   const handleLinkClick = useCallback(
-    async (e: React.MouseEvent, href: string) => {
+    (e: React.MouseEvent, href: string) => {
       e.preventDefault();
       if (href.startsWith("#")) {
         const el = containerRef.current?.querySelector(
@@ -107,9 +96,9 @@ export function MarkdownViewer({ file, tabId, draft, previewMode }: MarkdownView
         el?.scrollIntoView({ behavior: "smooth", block: "start" });
         return;
       }
-      const resolved = await resolveRelativeLink(file.path, href.split("#")[0]);
+      const resolved = resolveRelative(file.path, href.split("#")[0]);
       if (resolved) openFile(resolved);
-      else await openInDefaultApp(href);
+      else openInDefaultApp(href).catch(() => {});
     },
     [file.path, openFile],
   );
@@ -158,16 +147,8 @@ export function MarkdownViewer({ file, tabId, draft, previewMode }: MarkdownView
         if (typeof src === "string" && !/^(https?|data|asset):/i.test(src)) {
           // Resolve ./ ../ against the markdown file's directory (client-side;
           // upgrade path: shared Rust resolver if Windows edge cases appear).
-          const parts = file.path.replace(/\\/g, "/").split("/");
-          parts.pop();
-          for (const p of src.replace(/\\/g, "/").split("/")) {
-            if (!p || p === ".") continue;
-            if (p === "..") {
-              // Guard: never pop past the drive root / first segment.
-              if (parts.length > 1) parts.pop();
-            } else parts.push(p);
-          }
-          url = convertFileSrc(parts.join("/"));
+          const resolved = resolveRelative(file.path, src);
+          if (resolved) url = convertFileSrc(resolved);
         }
         return <img src={url} alt={alt} loading="lazy" {...rest} />;
       },
@@ -182,7 +163,7 @@ export function MarkdownViewer({ file, tabId, draft, previewMode }: MarkdownView
       h5: heading("h5"),
       h6: heading("h6"),
     }),
-    [handleLinkClick, file.path.replace],
+    [handleLinkClick, file.path],
   );
 
   const markdown = useMemo(
