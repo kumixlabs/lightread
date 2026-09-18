@@ -1,11 +1,5 @@
 name: "Checks"
-description: "Setup Bun (pinned), install, lint, typecheck, build, cargo check"
-
-inputs:
-  bun-version:
-    description: "Pinned Bun version (keep in sync with local dev)"
-    required: false
-    default: "1.4.2"
+description: "Setup Bun, install, lint, typecheck, build, cargo check"
 
 runs:
   using: "composite"
@@ -13,7 +7,7 @@ runs:
     - name: Setup Bun
       uses: oven-sh/setup-bun@v2
       with:
-        bun-version: ${{ inputs.bun-version }}
+        bun-version: latest
 
     - name: Setup Bun cache
       uses: actions/cache@v6
