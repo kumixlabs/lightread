@@ -2,10 +2,28 @@
 
 All notable changes to LightRead will be documented in this file.
 
-## 0.2.1 - 16-09-2026
+## 0.2.2 - 16-09-2026
 
 ### Added
 
+- **Window state persistence**: app remembers window dimensions, position, and maximized/fullscreen state across restarts (`lightread/window-state.json`), restoring without flicker or display overflow on multi-monitor setups.
+- **OS configuration persistence**: persistent dual-write of settings, recents, and sessions to standard OS configuration directory (`lightread/config.json`) with startup disk sync and fallback migration.
+- **Recent projects & files palette (`Ctrl+R`)**: keyboard-navigable modal dialog to quickly find and switch between recent projects and files with separate bordered sections, fuzzy search, and deletion support (`Shift+Delete` / `Alt+Delete`).
+- **Workspace recents isolation**: files opened within an active workspace are kept separate from standalone recents, matching VS Code workspace behavior.
+- **Top 5 recents on welcome screen**: welcome screen displays 5 most recent projects and 5 most recent files with inline delete actions.
+- **Unified settings reset**: "Reset to defaults" in Settings resets window geometry (unmaximizes, centers to 1200x800, cleans saved state file) and restores sidebar width to 260px.
+- **Recents test suite**: comprehensive unit tests covering recents quota isolation, cross-platform path deduplication, and removal operations.
+
+### Fixed
+
+- **Sidebar resize stability**: resizable panel now preserves fixed pixel widths (`groupResizeBehavior="preserve-pixel-size"`), avoiding unwanted width changes when resizing or maximizing the window.
+- **Sidebar toggle state preservation**: toggling sidebar visibility (`Ctrl+B`) keeps the main editor area mounted, preventing tab editor unmounts, cursor loss, scroll jumps, and media playback interruptions.
+- **Background tab cursor isolation**: restricted status bar cursor position updates strictly to the active tab to prevent hidden background tabs from overriding line/col stats.
+- **Save As watcher echo and asset scoping**: added `stampSelfWrite` and `grantAssetScope` to `saveTabAs` to prevent self-write reload triggers and ensure asset permissions on re-saved files.
+- **Search dialog duplicate close button**: removed duplicate close button on project search modal.
+- **TypeScript test runner declarations**: isolated `bun-types` under `tsconfig.test.json` referenced by root project references to resolve editor declaration conflicts without polluting browser bundle types.
+
+## 0.2.1 - 16-09-2026
 - **Sidebar root context menu**: right-click anywhere in the sidebar / file tree empty space to open the workspace root context menu (New File / New Folder).
 - **Native window drag-and-drop**: drag files or folders directly into the app window to open them (folders become workspace root, files open as new tabs) with visual drop zone feedback.
 - **Unsaved changes exit intercept**: closing the window prompts when tabs have unsaved edits (Save / Don't save / Cancel) to prevent accidental data loss.

@@ -278,3 +278,50 @@ pub fn grant_asset_scope(
     }
     .map_err(|e| e.to_string())
 }
+
+fn get_lightread_config_path(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
+    use tauri::Manager;
+    let base = app.path().config_dir().map_err(|e| e.to_string())?;
+    Ok(base.join("lightread").join("config.json"))
+}
+
+/// Read app configuration JSON from standard OS config directory.
+#[tauri::command]
+pub fn read_app_config(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    use tauri::Manager;
+    let config_path = get_lightread_config_path(&app)?;
+    if !config_path.exists() {
+        // Fallback migration: check old LightRead or com.lightread.app dir if exists
+        let old_candidates = [
+            app.path()
+                .config_dir()
+                .map(|b| b.join("LightRead").join("config.json")),
+            app.path()
+                .app_config_dir()
+                .map(|b| b.join("config.json")),
+        ];
+        for candidate in old_candidates.into_iter().flatten() {
+            if candidate.exists() {
+                if let Ok(content) = std::fs::read_to_string(&candidate) {
+                    let _ = write_app_config(app, content.clone());
+                    return Ok(Some(content));
+                }
+            }
+        }
+        return Ok(None);
+    }
+    std::fs::read_to_string(&config_path)
+        .map(Some)
+        .map_err(|e| e.to_string())
+}
+
+/// Write app configuration JSON to standard OS config directory.
+#[tauri::command]
+pub fn write_app_config(app: tauri::AppHandle, content: String) -> Result<(), String> {
+    let config_path = get_lightread_config_path(&app)?;
+    if let Some(parent) = config_path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    std::fs::write(&config_path, content).map_err(|e| e.to_string())
+}
+

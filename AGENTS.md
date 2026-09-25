@@ -1,32 +1,65 @@
-# Build commands
-- `bun install` — install deps
-- `bun test` — run unit tests
-- `bun run types:check` — typescript typecheck
-- `bun run lint` — biome check
-- `bun run build` — frontend build (tsc + vite)
-- `cargo check` — rust typecheck (run in src-tauri/)
-- `bun tauri dev` — full dev launch
-- `bun tauri build` — production build
+# Build & Validation Commands
+- `bun install` — install dependencies
+- `bun test` — run unit tests (Bun test runner)
+- `bun run types:check` — typecheck all project references (`tsc -b`)
+- `bun run lint` — lint and formatting check (`biome check`)
+- `bun run lint:fix` — auto-fix linting issues (`biome check --write --unsafe`)
+- `bun run format` — format files (`biome format --write`)
+- `bun run build` — frontend production build (`tsc -b && vite build`)
+- `cargo test` — run Rust backend unit tests (run in `src-tauri/`)
+- `cargo check` — Rust backend typecheck (run in `src-tauri/`)
+- `bun tauri dev` — full desktop app dev launch
+- `bun tauri build` — production desktop app build
 
-# Architecture
-- Product: LightRead — docs reader/editor (PRD: LightRead-PRD.md). Version source of truth: `package.json` (keep `src-tauri/tauri.conf.json` + `src-tauri/Cargo.toml` in sync on release).
-- State: zustand store at src/stores/app-store.ts (persisted: settings, recents, session tab paths)
-- File type detection: src/lib/file-types/registry.ts
-- Tauri API wrapper: src/lib/tauri-api.ts
-- Rust commands: src-tauri/src/{filesystem,watchers,search}.rs (read/write text, directory listing, create/rename/trash, file watchers incl. recursive workspace watch, project search)
-- Viewers dispatched by viewerType in src/components/viewers/viewer-router.tsx
-- File tree: custom recursive components in src/components/explorer/ (lazy children per folder, inline create/rename inputs, context menus, motion animations). Do NOT swap for declarative tree components — they can't host the inline-edit rows or per-node menus.
-- Watcher echo suppression: on WSL/drvfs, READING a directory emits watcher events. `markTreeRead()` + `treeEventGuard` (src/stores/app-store.ts) suppress echoes after every programmatic read; `selfWrites` suppresses own-save events. Keep stamping after any new tree-reading code path.
-- Editing: plain textarea surface for `text`, `markdown` source, and the Edit mode of `code`/`html`/`svg`/`csv` source. Highlighted view stays read-only; editing surface is always plain textarea.
-- Release CI: .github/workflows/release.yml (Windows/macOS/Linux matrix; draft release on `v*` tags)
+# Architecture & Tech Stack
+- **Product**: LightRead — lightweight document reader & editor (PRD: `LightRead-PRD.md`).
+- **Core Stack**: Tauri 2 + React 19 + TypeScript + Vite + Tailwind CSS v4 + `@kumix/ui` + Lucide icons.
+- **State Management**: Zustand store at `src/stores/app-store.ts`.
+  - Persisted in store: `settings`, `recents`, `sessionRootPath`, `sessionTabs`, `sessionActive`.
+  - Dual-write persistence: Synchronous `localStorage` for instant zero-flicker startup + Rust async disk write to OS config directory.
+- **Config Directory**: `%APPDATA%\lightread\` (Windows) or `~/.config/lightread/` (macOS/Linux).
+  - Folder name is lowercase `lightread` (backward compatible: checks `LightRead` and bundle ID `com.lightread.app` on read).
+  - `config.json`: App store state (settings, recents, session).
+  - `window-state.json`: Window dimensions, position coordinates, and maximized state.
+- **Rust Backend (`src-tauri/src/`)**:
+  - `filesystem.rs`: UTF-8 and lossy text read/write, directory enumeration, metadata, create, rename, trash deletion (`delete_path` via OS trash), dynamic asset scoping, app config read/write.
+  - `window_state.rs`: Window geometry tracking, auto-save on resize/move (debounced), flush on close/exit, multi-monitor bounds validation, startup restore, and reset.
+  - `watchers.rs`: Recursive workspace filesystem watcher and single-file watcher using `notify-debouncer-full`.
+  - `search.rs`: Non-blocking project search (`tauri::async_runtime::spawn_blocking`) with symlink cycle guard (`HashSet<PathBuf>`).
+  - `lib.rs`: Tauri builder, plugin registrations, invoke handler setup, single-instance enforcement, and window lifecycle hooks.
+- **Frontend Architecture (`src/`)**:
+  - `components/layout/`: `AppShell`, `Sidebar`, `Toolbar`, `StatusBar`, `WelcomeScreen`.
+  - `components/explorer/`: Custom recursive `FileTree` and `FileTreeNode` (lazy children per folder, inline rename/create inputs, motion animations, context menus). Do NOT replace with generic declarative tree components.
+  - `components/tabs/`: `TabBar`, `TabItem` (drag-and-drop reordering, middle-click close, dirty state indicators).
+  - `components/navigation/`: `QuickOpen` (`Ctrl+P`), `RecentDialog` (`Ctrl+R`), `ProjectSearch` (`Ctrl+Shift+F`), `FindBar` (`Ctrl+F` / `Ctrl+H`), `Breadcrumbs`.
+  - `components/settings/`: `SettingsDialog` (`Ctrl+,`) with theme, typography, markdown default mode, code theme, and reset to defaults.
+  - `components/viewers/`: Router (`viewer-router.tsx`) dispatching `code`, `markdown`, `text`, `csv`, `html`, `svg`, `image`, `media` (video/audio), and `unsupported`.
+  - `lib/file-types/registry.ts`: File extension classification, MIME mapping, and viewer routing.
+  - `lib/shiki.ts`: Shared Shiki highlighter singleton with lazy language loading and GitHub themes.
+  - `lib/tauri-api.ts`: Typed IPC wrapper over Tauri `invoke`, dialog, and process plugins.
 
-# Key rules
-- Editing is plain-text only (notepad-style). No WYSIWYG, no Monaco/CodeMirror/TipTap.
-- All text-based files are editable via plain-text Edit mode (no rich editing surface). Highlighting is view-only.
-- Never execute user files. No terminal (removed).
-- Markdown preview must strip raw HTML (no rehype-raw). HTML/SVG previews only in `sandbox=""` iframes via srcDoc.
-- Writes only via Rust commands (`write_text_file`, `create_file`, `create_dir`, `rename_path`). No fs plugin. Delete goes to OS trash via `delete_path` (recoverable, never permanent).
-- Never lose user input: save errors keep dirty state; external-change conflicts prompt, never silently overwrite.
-- Keep Tauri permissions minimal (see src-tauri/capabilities/default.json).
-- Highlighting: shared Shiki instance at src/lib/shiki.ts (lazy lang loading, GitHub themes). Used across code viewer and markdown preview code blocks.
-- Media: images via Tauri asset protocol (`security.assetProtocol.enable: true`). Audio/video playback via native `<video>`/`<audio>` tags through the same asset protocol (no third-party player deps).
+# Key Engineering Rules & Invariants
+- **Plain-Text Editing Surface**: Editing is strictly notepad-style plain textarea (`TextEditor`). No WYSIWYG, no Monaco, no CodeMirror, no TipTap. Text-based files (markdown source, code, HTML, SVG, CSV) toggle between view mode and plain textarea edit mode.
+- **No File Loss**: Dirty tabs prompt before closing (`UnsavedChangesDialog`). File watcher events detect external modifications and prompt conflict dialogs rather than silently overwriting unsaved work.
+- **OS Trash Only**: Deletions go to OS recycle bin / trash via Rust `delete_path`. Never permanently delete files with irreversible unlinks.
+- **Security Boundaries**:
+  - Never execute user files or run shell commands on them. No embedded terminal.
+  - Markdown preview must never execute raw HTML (no `rehype-raw`).
+  - HTML and SVG previews render inside strict `sandbox=""` iframes via `srcDoc`.
+  - Dynamic Tauri asset scoping: dynamic `grant_asset_scope` per opened file/folder; avoid static wildcard directory scopes in `tauri.conf.json`.
+- **Path Normalization**:
+  - All workspace, recents, tab, and expanded folder paths in frontend state MUST be normalized to POSIX forward slashes (`/`) via `toPosix()` in `src/lib/utils.ts`.
+- **Watcher Echo Suppression**:
+  - On WSL and Windows drvfs, reading directories triggers watcher events. `markTreeRead()` and `treeEventGuard` suppress echoes after programmatic reads.
+  - Saving a file records a timestamp in `selfWrites` (`stampSelfWrite`) to ignore the app's own write events.
+- **Sidebar & Layout Stability**:
+  - Sidebar width uses fixed pixel behavior (`groupResizeBehavior="preserve-pixel-size"`). It must not stretch or shrink with window resizing.
+  - Settings writes for sidebar width occur only on direct user pointer release (`meta.isUserInteraction`).
+  - `SidebarPane` keeps the main editor area (`TabsAndMain`) mounted persistently so toggling sidebar visibility (`Ctrl+B`) preserves cursor, scroll position, and active media playback.
+- **TypeScript Project References**:
+  - Root `tsconfig.json` references `tsconfig.app.json` (frontend app), `tsconfig.node.json` (Vite config), and `tsconfig.test.json` (Bun tests with `bun-types`).
+  - Typecheck must run via `tsc -b` (`bun run types:check`).
+- **Git & Release Conventions**:
+  - NEVER commit or push automatically without explicit user instruction. Leave working tree changes staged or unstaged for review.
+  - Version source of truth is `package.json`. Keep `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml` in sync on release.
+  - Copyright: `© 2026 Kumix Labs`.

@@ -8,13 +8,16 @@ import {
   deletePath,
   fileExists,
   grantAssetScope,
+  isTauri,
   loadFile,
   pickSavePath,
   readDirectory,
   renamePath,
+  resetWindowState,
   startFileWatch,
   stopAllWatches,
   stopFileWatch,
+  writeAppConfig,
   writeTextFile,
 } from "@/lib/tauri-api";
 import { basename } from "@/lib/utils";
@@ -83,6 +86,7 @@ interface AppState {
   findCaseSensitive: boolean;
   findIndex: number;
   quickOpenOpen: boolean;
+  recentOpen: boolean;
   settingsOpen: boolean;
   projectSearchOpen: boolean;
   sidebarVisible: boolean;
@@ -109,8 +113,8 @@ interface AppState {
   settings: AppSettings;
   recents: RecentEntry[];
 
-  openFolder: (path: string) => Promise<void>;
-  openFile: (path: string) => Promise<void>;
+  openFolder: (path: string, options?: { recordRecent?: boolean }) => Promise<void>;
+  openFile: (path: string, options?: { recordRecent?: boolean }) => Promise<void>;
   closeTab: (tabId: string) => void;
   closeOtherTabs: (tabId: string) => void;
   closeAllTabs: () => void;
@@ -125,6 +129,7 @@ interface AppState {
   setFindIndex: (i: number) => void;
   setFindQuery: (query: string) => void;
   setQuickOpenOpen: (open: boolean) => void;
+  setRecentOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
   setProjectSearchOpen: (open: boolean) => void;
   toggleSidebar: () => void;
@@ -162,6 +167,7 @@ interface AppState {
   updateSettings: (partial: Partial<AppSettings>) => void;
   resetSettings: () => void;
   addRecent: (entry: RecentEntry) => void;
+  removeRecent: (path: string) => void;
   clearRecents: () => void;
 }
 
@@ -179,6 +185,34 @@ export const DEFAULT_SETTINGS: AppSettings = {
   autoRefresh: true,
   codeTheme: "auto",
   markdownDefaultMode: "source",
+};
+
+const persistentAppStorage = {
+  getItem: (name: string): string | null => {
+    try {
+      return localStorage.getItem(name);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (name: string, value: string): void => {
+    try {
+      localStorage.setItem(name, value);
+    } catch {}
+    if (isTauri()) {
+      writeAppConfig(value).catch((err) => {
+        console.warn("[lightread] failed to write app config to disk:", err);
+      });
+    }
+  },
+  removeItem: (name: string): void => {
+    try {
+      localStorage.removeItem(name);
+    } catch {}
+    if (isTauri()) {
+      writeAppConfig("{}").catch(() => {});
+    }
+  },
 };
 
 export const useStore = create<AppState>()(
@@ -199,6 +233,7 @@ export const useStore = create<AppState>()(
       findCaseSensitive: false,
       findIndex: 0,
       quickOpenOpen: false,
+      recentOpen: false,
       settingsOpen: false,
       projectSearchOpen: false,
       sidebarVisible: true,
@@ -218,7 +253,7 @@ export const useStore = create<AppState>()(
       settings: DEFAULT_SETTINGS,
       recents: [],
 
-      openFolder: async (path: string) => {
+      openFolder: async (path: string, options?: { recordRecent?: boolean }) => {
         set({
           workspace: { rootPath: null, rootName: null, tree: [], loading: true, treeVersion: 0 },
         });
@@ -243,7 +278,9 @@ export const useStore = create<AppState>()(
             startFileWatch(t.file.path).catch(() => {});
           }
           startFileWatch(path, true).catch(() => {});
-          get().addRecent({ path, name: basename(path), isDir: true, openedAt: Date.now() });
+          if (options?.recordRecent !== false) {
+            get().addRecent({ path, name: basename(path), isDir: true, openedAt: Date.now() });
+          }
           markTreeRead();
         } catch (e) {
           set((state) => ({
@@ -257,7 +294,7 @@ export const useStore = create<AppState>()(
         }
       },
 
-      openFile: async (path: string) => {
+      openFile: async (path: string, options?: { recordRecent?: boolean }) => {
         const pPosix = toPosix(path);
         const existing = get().tabs.find((t) => toPosix(t.file.path) === pPosix);
         if (existing) {
@@ -280,7 +317,18 @@ export const useStore = create<AppState>()(
             activeTabId: tab.id,
             fileLoading: false,
           }));
-          get().addRecent({ path, name: file.name, isDir: false, openedAt: Date.now() });
+          // Determine if this file should be recorded in recents:
+          // VS Code behavior: Only files opened manually / outside workspace.
+          // Files inside the workspace clicked in tree or opened via project search are not recorded.
+          const root = get().workspace.rootPath;
+          const isInsideWorkspace = Boolean(
+            root && (pPosix === toPosix(root) || pPosix.startsWith(`${toPosix(root)}/`)),
+          );
+          const shouldRecord = options?.recordRecent ?? !isInsideWorkspace;
+
+          if (shouldRecord) {
+            get().addRecent({ path, name: file.name, isDir: false, openedAt: Date.now() });
+          }
           try {
             await startFileWatch(path);
           } catch (e) {
@@ -374,6 +422,7 @@ export const useStore = create<AppState>()(
       setFindCaseSensitive: (v: boolean) => set({ findCaseSensitive: v }),
       setFindIndex: (i: number) => set({ findIndex: i }),
       setQuickOpenOpen: (open: boolean) => set({ quickOpenOpen: open }),
+      setRecentOpen: (open: boolean) => set({ recentOpen: open }),
       setSettingsOpen: (open: boolean) => set({ settingsOpen: open }),
       setProjectSearchOpen: (open: boolean) => set({ projectSearchOpen: open }),
       toggleSidebar: () => set((state) => ({ sidebarVisible: !state.sidebarVisible })),
@@ -766,25 +815,64 @@ export const useStore = create<AppState>()(
       updateSettings: (partial: Partial<AppSettings>) =>
         set((state) => ({ settings: { ...state.settings, ...partial } })),
 
-      resetSettings: () => set({ settings: { ...DEFAULT_SETTINGS } }),
+      resetSettings: () => {
+        set({
+          settings: { ...DEFAULT_SETTINGS },
+          sidebarVisible: true,
+        });
+        resetWindowState().catch(() => {});
+      },
 
       addRecent: (entry: RecentEntry) =>
-        set((state) => ({
-          recents: [entry, ...state.recents.filter((r) => r.path !== entry.path)].slice(0, 20),
-        })),
+        set((state) => {
+          const normPath = toPosix(entry.path);
+          const normEntry: RecentEntry = { ...entry, path: normPath };
+          const others = state.recents.filter((r) => toPosix(r.path) !== normPath);
+
+          const dirs = normEntry.isDir
+            ? [normEntry, ...others.filter((r) => r.isDir)].slice(0, 20)
+            : others.filter((r) => r.isDir).slice(0, 20);
+
+          const files = !normEntry.isDir
+            ? [normEntry, ...others.filter((r) => !r.isDir)].slice(0, 50)
+            : others.filter((r) => !r.isDir).slice(0, 50);
+
+          return {
+            recents: [...dirs, ...files].sort((a, b) => (b.openedAt ?? 0) - (a.openedAt ?? 0)),
+          };
+        }),
+
+      removeRecent: (path: string) =>
+        set((state) => {
+          const normPath = toPosix(path);
+          return {
+            recents: state.recents.filter((r) => toPosix(r.path) !== normPath),
+          };
+        }),
 
       clearRecents: () => set({ recents: [] }),
     }),
     {
       name: "lightread-store",
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => persistentAppStorage),
       // Deep-merge settings so newly added defaults (e.g. lineHeight) survive
       // restores from older persisted states instead of coming back undefined.
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>;
+        const rawRecents = Array.isArray(p.recents) ? p.recents : current.recents;
+        const seen = new Set<string>();
+        const sanitized: RecentEntry[] = [];
+        for (const r of rawRecents) {
+          if (!r || typeof r.path !== "string") continue;
+          const norm = toPosix(r.path);
+          if (seen.has(norm)) continue;
+          seen.add(norm);
+          sanitized.push({ ...r, path: norm });
+        }
         return {
           ...current,
           ...p,
+          recents: sanitized,
           settings: { ...current.settings, ...(p.settings ?? {}) },
         };
       },

@@ -119,10 +119,10 @@ export function QuickOpen() {
   const select = useCallback(
     (item: { path: string } | undefined) => {
       if (!item) return;
-      openFile(item.path);
+      openFile(item.path, { recordRecent: !rootPath });
       setOpen(false);
     },
-    [openFile, setOpen],
+    [openFile, setOpen, rootPath],
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -141,7 +141,7 @@ export function QuickOpen() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-2xl gap-0 overflow-hidden rounded-xl border-border p-0 shadow-2xl [&>button]:hidden">
+      <DialogContent className="gap-0 overflow-hidden rounded-xl border-border p-0 shadow-2xl sm:max-w-2xl [&>button]:hidden">
         <div className="flex items-center gap-2.5 border-border border-b px-4 py-3">
           <Search className="size-4 text-muted-foreground" />
           <Input

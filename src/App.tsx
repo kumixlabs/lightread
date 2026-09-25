@@ -9,8 +9,15 @@ import { AppShell } from "@/components/layout/app-shell";
 import { useFileWatcher } from "@/hooks/use-file-watcher";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useTheme } from "@/hooks/use-theme";
-import { getCliArgs, getFileMetadata, pickFile, pickFolder } from "@/lib/tauri-api";
-import { useStore } from "@/stores/app-store";
+import {
+  getCliArgs,
+  getFileMetadata,
+  isTauri,
+  pickFile,
+  pickFolder,
+  readAppConfig,
+} from "@/lib/tauri-api";
+import { toPosix, useStore } from "@/stores/app-store";
 
 export default function App() {
   useTheme();
@@ -40,9 +47,50 @@ export default function App() {
 
   // Restore last session's workspace folder + tabs (or open path from CLI arg)
   useEffect(() => {
-    const s = useStore.getState();
     let cancelled = false;
     (async () => {
+      // 0. Synchronize store from OS config file if available (survives webview cache wipes)
+      if (isTauri()) {
+        try {
+          const disk = await readAppConfig();
+          if (disk && !cancelled) {
+            const parsed = JSON.parse(disk);
+            const diskState = parsed?.state;
+            if (diskState && typeof diskState === "object") {
+              useStore.setState((current) => {
+                const currentRecents = current.recents;
+                const seen = new Set(currentRecents.map((r) => toPosix(r.path)));
+                const mergedRecents = [...currentRecents];
+                if (Array.isArray(diskState.recents)) {
+                  for (const r of diskState.recents) {
+                    if (!r || typeof r.path !== "string") continue;
+                    const norm = toPosix(r.path);
+                    if (!seen.has(norm)) {
+                      seen.add(norm);
+                      mergedRecents.push({ ...r, path: norm });
+                    }
+                  }
+                }
+                return {
+                  recents: mergedRecents.sort((a, b) => (b.openedAt ?? 0) - (a.openedAt ?? 0)),
+                  settings: { ...current.settings, ...(diskState.settings ?? {}) },
+                  sessionRootPath: current.sessionRootPath ?? diskState.sessionRootPath ?? null,
+                  sessionTabs:
+                    current.sessionTabs.length > 0
+                      ? current.sessionTabs
+                      : (diskState.sessionTabs ?? []),
+                  sessionActive: current.sessionActive ?? diskState.sessionActive ?? null,
+                };
+              });
+            }
+          }
+        } catch (e) {
+          console.warn("[lightread] failed to sync disk config on startup:", e);
+        }
+      }
+
+      if (cancelled) return;
+      const s = useStore.getState();
       // 1. Check if launched with a file/folder arg ("Open with LightRead" cold start)
       try {
         const args = await getCliArgs();
@@ -65,11 +113,12 @@ export default function App() {
 
       if (cancelled || s.tabs.length > 0) return;
 
-      if (s.sessionRootPath) await s.openFolder(s.sessionRootPath).catch(() => {});
+      if (s.sessionRootPath)
+        await s.openFolder(s.sessionRootPath, { recordRecent: false }).catch(() => {});
       if (cancelled) return;
       for (const p of s.sessionTabs) {
         if (cancelled) return;
-        await s.openFile(p).catch(() => {});
+        await s.openFile(p, { recordRecent: false }).catch(() => {});
       }
       if (cancelled) return;
       if (s.sessionActive && useStore.getState().tabs.some((t) => t.id === s.sessionActive)) {

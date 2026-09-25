@@ -138,6 +138,22 @@ export function getFileUrl(path: string): string {
   return convertFileSrc(path);
 }
 
+export const isTauri = (): boolean =>
+  typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+
+export async function readAppConfig(): Promise<string | null> {
+  return invoke<string | null>("read_app_config");
+}
+
+export async function writeAppConfig(content: string): Promise<void> {
+  return invoke<void>("write_app_config", { content });
+}
+
+export async function resetWindowState(): Promise<void> {
+  if (!isTauri()) return;
+  return invoke<void>("reset_window_state");
+}
+
 export async function loadFile(path: string): Promise<LoadedFile> {
   const name = basename(path);
   const ext = extname(path);

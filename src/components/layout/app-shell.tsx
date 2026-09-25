@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import type { PanelImperativeHandle } from "react-resizable-panels";
 
 import { Button } from "@kumix/ui/ui/button";
 import {
@@ -15,6 +16,7 @@ import { WelcomeScreen } from "@/components/layout/welcome-screen";
 import { FindBar } from "@/components/navigation/find-bar";
 import { ProjectSearch } from "@/components/navigation/project-search";
 import { QuickOpen } from "@/components/navigation/quick-open";
+import { RecentDialog } from "@/components/navigation/recent-dialog";
 import { Toolbar } from "@/components/navigation/toolbar";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { TabBar } from "@/components/tabs/tab-bar";
@@ -55,31 +57,55 @@ function UnsavedChangesDialog() {
   );
 }
 
-function SidebarPane({ width, onResize }: { width: number; onResize: (px: number) => void }) {
-  // Freeze initial width per mount: re-feeding a changing defaultSize while
-  // dragging re-registers the panel and fights the resize gesture.
-  const [initialWidth] = useState(width);
-  // Debounce settings writes — persisting on every drag frame churns storage.
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const handleResize = useCallback(
-    (px: number) => {
-      clearTimeout(timer.current);
-      timer.current = setTimeout(() => onResize(px), 150);
-    },
-    [onResize],
-  );
-  useEffect(() => () => clearTimeout(timer.current), []);
+function SidebarPane({
+  visible,
+  width,
+  onResize,
+}: {
+  visible: boolean;
+  width: number;
+  onResize: (px: number) => void;
+}) {
+  const panelRef = useRef<PanelImperativeHandle | null>(null);
+  const clampedWidth = Math.min(600, Math.max(200, width || 260));
+
+  // Sync panel size if store settings change (e.g. disk load or settings reset)
+  useEffect(() => {
+    if (panelRef.current) {
+      const current = panelRef.current.getSize().inPixels;
+      if (Math.abs(current - clampedWidth) > 2) {
+        panelRef.current.resize(clampedWidth);
+      }
+    }
+  }, [clampedWidth]);
+
   return (
-    <ResizablePanelGroup orientation="horizontal">
-      <ResizablePanel
-        defaultSize={initialWidth}
-        minSize={250}
-        maxSize={500}
-        onResize={(size) => handleResize(size.inPixels)}
-      >
-        <Sidebar />
-      </ResizablePanel>
-      <ResizableHandle />
+    <ResizablePanelGroup
+      orientation="horizontal"
+      onLayoutChanged={(_layout, meta) => {
+        // Save layout only when user directly moves or releases the separator
+        if (meta.isUserInteraction && panelRef.current) {
+          const px = panelRef.current.getSize().inPixels;
+          if (px > 0) {
+            onResize(Math.round(px));
+          }
+        }
+      }}
+    >
+      {visible && (
+        <>
+          <ResizablePanel
+            panelRef={panelRef}
+            defaultSize={clampedWidth}
+            minSize={200}
+            maxSize={600}
+            groupResizeBehavior="preserve-pixel-size"
+          >
+            <Sidebar />
+          </ResizablePanel>
+          <ResizableHandle />
+        </>
+      )}
       <ResizablePanel>
         <div className="flex h-full flex-col bg-background">
           <Toolbar />
@@ -111,27 +137,22 @@ export function AppShell() {
   const sidebarWidth = useStore((s) => s.settings.sidebarWidth);
   const updateSettings = useStore((s) => s.updateSettings);
   const quickOpenOpen = useStore((s) => s.quickOpenOpen);
+  const recentOpen = useStore((s) => s.recentOpen);
   const settingsOpen = useStore((s) => s.settingsOpen);
   const projectSearchOpen = useStore((s) => s.projectSearchOpen);
-
-  const mainArea = (
-    <div className="flex h-full flex-col bg-background">
-      <Toolbar />
-      <TabsAndMain />
-    </div>
-  );
 
   return (
     <>
       {quickOpenOpen && <QuickOpen />}
+      {recentOpen && <RecentDialog />}
       {settingsOpen && <SettingsDialog />}
       {projectSearchOpen && <ProjectSearch />}
       <UnsavedChangesDialog />
-      {!sidebarVisible ? (
-        mainArea
-      ) : (
-        <SidebarPane width={sidebarWidth} onResize={(px) => updateSettings({ sidebarWidth: px })} />
-      )}
+      <SidebarPane
+        visible={sidebarVisible}
+        width={sidebarWidth}
+        onResize={(px) => updateSettings({ sidebarWidth: px })}
+      />
     </>
   );
 }

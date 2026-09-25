@@ -1,4 +1,4 @@
-import { Clock, FilePlus, FileText, Folder, FolderOpen } from "lucide-react";
+import { Clock, FilePlus, FileText, Folder, FolderOpen, X } from "lucide-react";
 
 import { Button } from "@kumix/ui/ui/button";
 import { useStore } from "@/stores/app-store";
@@ -9,6 +9,7 @@ const SHORTCUTS: { keys: string; label: string }[] = [
   { keys: "Ctrl+O", label: "Open File" },
   { keys: "Ctrl+Shift+O", label: "Open Folder" },
   { keys: "Ctrl+P", label: "Quick Open" },
+  { keys: "Ctrl+R", label: "Open Recent" },
   { keys: "Ctrl+B", label: "Toggle Sidebar" },
   { keys: "Ctrl+F", label: "Find in File" },
   { keys: "Ctrl+H", label: "Find & Replace" },
@@ -28,6 +29,7 @@ export function WelcomeScreen() {
   const recents = useStore((s) => s.recents);
   const openFile = useStore((s) => s.openFile);
   const openFolder = useStore((s) => s.openFolder);
+  const removeRecent = useStore((s) => s.removeRecent);
 
   const recentDirs = recents.filter((r) => r.isDir).slice(0, 5);
   const recentFiles = recents.filter((r) => !r.isDir).slice(0, 5);
@@ -65,14 +67,31 @@ export function WelcomeScreen() {
                 </h3>
                 <div className="space-y-0.5">
                   {recentDirs.map((r) => (
-                    <button
+                    <div
                       key={r.path}
-                      onClick={() => openFolder(r.path)}
-                      className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] transition-colors hover:bg-accent"
+                      className="group flex w-full items-center justify-between rounded-md pr-1 transition-colors hover:bg-accent"
                     >
-                      <Folder className="size-3.5 shrink-0 text-muted-foreground" />
-                      <span className="truncate text-left">{r.name}</span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => openFolder(r.path)}
+                        title={r.path}
+                        className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-1.5 text-[13px]"
+                      >
+                        <Folder className="size-3.5 shrink-0 text-muted-foreground" />
+                        <span className="truncate text-left">{r.name}</span>
+                      </button>
+                      <button
+                        type="button"
+                        title="Remove from recents"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeRecent(r.path);
+                        }}
+                        className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-background/80 hover:text-foreground group-hover:opacity-100"
+                      >
+                        <X className="size-3 shrink-0" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -85,14 +104,31 @@ export function WelcomeScreen() {
                 </h3>
                 <div className="space-y-0.5">
                   {recentFiles.map((r) => (
-                    <button
+                    <div
                       key={r.path}
-                      onClick={() => openFile(r.path)}
-                      className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] transition-colors hover:bg-accent"
+                      className="group flex w-full items-center justify-between rounded-md pr-1 transition-colors hover:bg-accent"
                     >
-                      <FileText className="size-3.5 shrink-0 text-muted-foreground" />
-                      <span className="truncate text-left">{r.name}</span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => openFile(r.path)}
+                        title={r.path}
+                        className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-1.5 text-[13px]"
+                      >
+                        <FileText className="size-3.5 shrink-0 text-muted-foreground" />
+                        <span className="truncate text-left">{r.name}</span>
+                      </button>
+                      <button
+                        type="button"
+                        title="Remove from recents"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeRecent(r.path);
+                        }}
+                        className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-background/80 hover:text-foreground group-hover:opacity-100"
+                      >
+                        <X className="size-3 shrink-0" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>

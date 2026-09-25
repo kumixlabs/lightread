@@ -1,6 +1,7 @@
 mod filesystem;
 mod search;
 mod watchers;
+mod window_state;
 
 use tauri::{Emitter, Manager};
 
@@ -24,6 +25,7 @@ pub fn run() {
             }
         }))
         .manage(watchers::WatcherState::default())
+        .manage(window_state::WindowStateManager::default())
         .setup(|app| {
             let log_builder = tauri_plugin_log::Builder::default().level(log::LevelFilter::Info);
             // Release builds log to a rotating file so bug reports are possible;
@@ -47,6 +49,23 @@ pub fn run() {
                 ])
             };
             app.handle().plugin(log_builder.build())?;
+
+            if let Some(window) = app.get_webview_window("main") {
+                window_state::restore_window_state(&window);
+
+                let win_clone = window.clone();
+                window.on_window_event(move |event| match event {
+                    tauri::WindowEvent::Resized(_) | tauri::WindowEvent::Moved(_) => {
+                        window_state::update_window_geometry(&win_clone, false);
+                    }
+                    tauri::WindowEvent::CloseRequested { .. }
+                    | tauri::WindowEvent::Destroyed => {
+                        window_state::update_window_geometry(&win_clone, true);
+                    }
+                    _ => {}
+                });
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -62,15 +81,23 @@ pub fn run() {
             filesystem::rename_path,
             filesystem::delete_path,
             filesystem::grant_asset_scope,
+            filesystem::read_app_config,
+            filesystem::write_app_config,
             watchers::start_file_watch,
             watchers::stop_file_watch,
             watchers::stop_all_watches,
             search::search_in_project,
+            window_state::reset_window_state,
         ])
         .build(tauri::generate_context!())
         .map_err(|e| e.to_string())
         .expect("error while building tauri application")
         .run(|_app, _event| {
+            if let tauri::RunEvent::Exit = _event {
+                if let Some(window) = _app.get_webview_window("main") {
+                    window_state::update_window_geometry(&window, true);
+                }
+            }
             // macOS: "Open with LightRead" while already running — the
             // single-instance plugin is Windows/Linux only, so Finder file
             // URLs arrive here and are forwarded to the frontend.

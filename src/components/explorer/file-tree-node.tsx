@@ -318,7 +318,7 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps) {
     if (node.isDir) {
       toggleDir(node.path);
     } else {
-      openFile(node.path);
+      openFile(node.path, { recordRecent: false });
     }
   };
 

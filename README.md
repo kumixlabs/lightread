@@ -29,9 +29,11 @@ A lightweight document reader & editor for Windows, macOS, and Linux. Think Wind
 - **Live tree** — external deletes/renames/creates show up automatically, no refresh needed.
 - **Create / rename / delete** — right-click in the sidebar: New File, New Folder, Rename (inline), Move to trash (recoverable via OS trash).
 - **Tabs** — middle-click close, close others/all, cycle (`Ctrl+Tab`).
-- **Quick open** (`Ctrl+P`), **project search** (`Ctrl+Shift+F`), breadcrumbs, recents.
+- **Quick open** (`Ctrl+P`), **project search** (`Ctrl+Shift+F`), **recents palette** (`Ctrl+R`), breadcrumbs, recents.
 - **Session restore** — last open tabs (paths only) reopen on launch.
 ### Platform & System
+- **Window state persistence** — remembers window size, position, and maximized state across sessions.
+- **OS configuration persistence** — settings, recents, and sessions sync directly to standard OS config folders (`lightread/config.json`).
 - **Auto-updater** — built-in update checker & installer in Settings backed by GitHub Releases and cryptographic signatures.
 - **Drag & drop** — drop files or folders directly into the window to open.
 - **Single-instance & associations** — "Open with LightRead" file associations (`.md`, `.txt`, `.log`).

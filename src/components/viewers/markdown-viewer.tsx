@@ -98,7 +98,7 @@ export function MarkdownViewer({ file, tabId, draft, previewMode }: MarkdownView
         return;
       }
       const resolved = resolveRelative(file.path, href.split("#")[0]);
-      if (resolved) openFile(resolved);
+      if (resolved) openFile(resolved, { recordRecent: false });
       else openInDefaultApp(href).catch(() => {});
     },
     [file.path, openFile],

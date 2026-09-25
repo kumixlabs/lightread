@@ -75,7 +75,7 @@ export function ProjectSearch() {
   };
 
   const handleClickResult = (path: string, line: number) => {
-    openFile(path);
+    openFile(path, { recordRecent: false });
     useStore.getState().revealLine(path, line); // ViewerRouter scrolls once active
     setOpen(false);
   };
@@ -86,7 +86,7 @@ export function ProjectSearch() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent
         showCloseButton={false}
-        className="max-w-3xl gap-0 overflow-hidden rounded-xl border-border p-0"
+        className="gap-0 overflow-hidden rounded-xl border-border p-0 sm:max-w-3xl"
       >
         <DialogTitle className="sr-only">Project Search</DialogTitle>
         <div className="flex items-center gap-2 border-border border-b px-4 py-3">

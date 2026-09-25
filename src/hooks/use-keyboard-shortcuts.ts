@@ -12,8 +12,8 @@ export function useKeyboardShortcuts() {
       const shift = e.shiftKey;
       const key = e.key.toLowerCase(); // CapsLock/layout must not break letters
       // Dialog inputs own their keystrokes — don't steal open/find shortcuts
-      // while a modal (quick open, settings, project search) has focus.
-      const inModal = s.quickOpenOpen || s.settingsOpen || s.projectSearchOpen;
+      // while a modal (quick open, settings, project search, open recent) has focus.
+      const inModal = s.quickOpenOpen || s.settingsOpen || s.projectSearchOpen || s.recentOpen;
 
       if (ctrl && shift && key === "o" && !inModal) {
         e.preventDefault();
@@ -52,6 +52,11 @@ export function useKeyboardShortcuts() {
       if (ctrl && !shift && key === "p" && !inModal) {
         e.preventDefault();
         s.setQuickOpenOpen(true);
+        return;
+      }
+      if (ctrl && !shift && key === "r") {
+        e.preventDefault();
+        s.setRecentOpen(!s.recentOpen);
         return;
       }
       if (ctrl && !shift && key === "f" && !inModal) {
@@ -128,6 +133,10 @@ export function useKeyboardShortcuts() {
           }
           if (s.quickOpenOpen) {
             s.setQuickOpenOpen(false);
+            return;
+          }
+          if (s.recentOpen) {
+            s.setRecentOpen(false);
             return;
           }
           if (s.findOpen) {
