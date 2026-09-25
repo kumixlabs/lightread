@@ -166,7 +166,7 @@ export function ViewerRouter() {
             tabId={tab.id}
             content={tab.draft ?? file.content}
             readOnly={!!file.truncated || !!file.lossy}
-            onCursor={setCursor}
+            onCursor={tab.id === activeTabId ? setCursor : undefined}
           />
         );
       case "code":
@@ -182,7 +182,7 @@ export function ViewerRouter() {
             tabId={tab.id}
             draft={tab.draft}
             readOnly={!!file.truncated || !!file.lossy}
-            onCursor={setCursor}
+            onCursor={tab.id === activeTabId ? setCursor : undefined}
           />
         );
       case "html":
@@ -192,7 +192,7 @@ export function ViewerRouter() {
             tabId={tab.id}
             draft={tab.draft}
             readOnly={!!file.truncated}
-            onCursor={setCursor}
+            onCursor={tab.id === activeTabId ? setCursor : undefined}
           />
         );
       case "svg":
@@ -202,7 +202,7 @@ export function ViewerRouter() {
             tabId={tab.id}
             draft={tab.draft}
             readOnly={!!file.truncated}
-            onCursor={setCursor}
+            onCursor={tab.id === activeTabId ? setCursor : undefined}
           />
         );
       case "csv":
@@ -213,7 +213,7 @@ export function ViewerRouter() {
             draft={tab.draft}
             fontSize={settings.fontSize}
             readOnly={!!file.truncated}
-            onCursor={setCursor}
+            onCursor={tab.id === activeTabId ? setCursor : undefined}
           />
         );
       case "image":

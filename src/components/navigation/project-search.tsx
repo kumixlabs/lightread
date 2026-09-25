@@ -85,7 +85,7 @@ export function ProjectSearch() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent
-        showCloseButton
+        showCloseButton={false}
         className="max-w-3xl gap-0 overflow-hidden rounded-xl border-border p-0"
       >
         <DialogTitle className="sr-only">Project Search</DialogTitle>

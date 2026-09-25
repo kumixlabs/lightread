@@ -21,6 +21,9 @@ All notable changes to LightRead will be documented in this file.
 - **Cross-platform path normalization**: normalized POSIX/Windows backslash separators for tree node expansion, active tab tracking, and breadcrumb clicks.
 - **Text editor undo history**: Tab key indentation now preserves native browser undo/redo history (`Ctrl+Z`).
 - **Viewer memory leak**: pruned unmounted tabs from keep-alive viewer set upon tab closure so closed tabs don't accumulate in the DOM.
+- **Background tab cursor isolation**: restricted status bar cursor position updates strictly to the active tab to prevent hidden background tabs from overriding line/col stats.
+- **Save As watcher echo and asset scoping**: added `stampSelfWrite` and `grantAssetScope` to `saveTabAs` to prevent self-write reload triggers and ensure asset permissions on re-saved files.
+- **Search dialog duplicate close button**: removed duplicate close button on project search modal.
 - **`selfWrites` unbounded map**: auto-prunes expired entries (>4s) after 50 records to prevent memory leakage in long-running sessions.
 - **Sequential directory expansion**: replaced concurrent `Promise.all` in `expandAll` with sequential traversal to prevent I/O stampede and thread exhaustion on large workspaces.
 - **Conflict between TypeScript and MPEG-TS**: removed ambiguous `.ts` video extension from media detection.
@@ -30,7 +33,7 @@ All notable changes to LightRead will be documented in this file.
 
 - **File tree icons**: added dedicated `FileText` icon for `.txt`, `.text`, and `.log` files.
 - **Shared dark mode hook**: consolidated duplicated dark mode detection into `useIsDark()`.
-- **Dependencies**: updated to React 19.3, Vite 8.3, @kumix/ui 0.3.15, @kumix/utils 0.3.0, @base-ui/react 1.8.0, Lucide icons 1.46, Motion 13.3.
+- **Dependencies**: updated to React 19.3, Vite 8.3.1, @kumix/ui 0.3.17, @kumix/utils 0.3.0, @base-ui/react 1.8.0, Lucide icons 1.48, Motion 13.4.3.
 
 ## 0.2.0 - 26-08-2026
 

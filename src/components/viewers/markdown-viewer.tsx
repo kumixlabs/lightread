@@ -67,6 +67,7 @@ function extractToc(md: string): TocEntry[] {
 }
 
 export function MarkdownViewer({ file, tabId, draft, previewMode }: MarkdownViewerProps) {
+  const activeTabId = useStore((s) => s.activeTabId);
   const setPreviewMode = useStore((s) => s.setPreviewMode);
   const openFile = useStore((s) => s.openFile);
   const setCursor = useStore((s) => s.setCursor);
@@ -226,7 +227,7 @@ export function MarkdownViewer({ file, tabId, draft, previewMode }: MarkdownView
             <TextEditor
               tabId={tabId}
               content={content}
-              onCursor={setCursor}
+              onCursor={tabId === activeTabId ? setCursor : undefined}
               readOnly={file.truncated}
             />
           )}

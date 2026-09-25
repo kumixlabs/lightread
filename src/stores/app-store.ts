@@ -680,9 +680,18 @@ export const useStore = create<AppState>()(
         const nextPath = await pickSavePath(tab.file.name);
         if (!nextPath) return;
         const contents = tab.draft ?? tab.file.content;
+        stampSelfWrite(nextPath);
         await writeTextFile(nextPath, contents);
+        await grantAssetScope(nextPath, false).catch(() => {});
         stopFileWatch(tab.file.path).catch(() => {});
-        const file = { ...tab.file, path: nextPath, name: basename(nextPath), content: contents };
+        const file = {
+          ...tab.file,
+          path: nextPath,
+          name: basename(nextPath),
+          content: contents,
+          size: new Blob([contents]).size,
+          lossy: false,
+        };
         set((state) => ({
           tabs: state.tabs.map((t) =>
             t.id === tabId ? { ...t, id: nextPath, file, draft: undefined } : t,
