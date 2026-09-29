@@ -2,6 +2,12 @@
 
 All notable changes to LightRead will be documented in this file.
 
+## 0.2.3 - 29-09-2026
+
+### Added
+
+- **Stem-only file rename selection**: renaming files in the file tree automatically selects only the filename stem up to the last extension (`setSelectionRange(0, dot)`), matching VS Code and native OS behavior. Dotfiles (`.gitignore`), files without extensions (`README`), and directories retain full selection.
+
 ## 0.2.2 - 16-09-2026
 
 ### Added

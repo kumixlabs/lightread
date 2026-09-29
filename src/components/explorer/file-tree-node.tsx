@@ -42,12 +42,14 @@ export function NameInput({
   depth,
   initial = "",
   placeholder,
+  selectStem,
   onCommit,
   onCancel,
 }: {
   depth: number;
   initial?: string;
   placeholder?: string;
+  selectStem?: boolean;
   onCommit: (name: string) => void;
   onCancel: () => void;
 }) {
@@ -56,9 +58,13 @@ export function NameInput({
   const done = useRef(false);
 
   useEffect(() => {
-    ref.current?.focus();
-    ref.current?.select();
-  }, []);
+    const el = ref.current;
+    if (!el) return;
+    el.focus();
+    const dot = selectStem ? initial.lastIndexOf(".") : -1;
+    if (dot > 0) el.setSelectionRange(0, dot);
+    else el.select();
+  }, [initial, selectStem]);
 
   const finish = (commit: boolean) => {
     if (done.current) return;
@@ -372,6 +378,7 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps) {
       <NameInput
         depth={depth}
         initial={node.name}
+        selectStem={!node.isDir}
         onCommit={(n) => commitRename(n)}
         onCancel={cancelFsEdit}
       />
