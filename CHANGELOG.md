@@ -2,6 +2,13 @@
 
 All notable changes to LightRead will be documented in this file.
 
+## 0.2.4 - 29-09-2026
+
+### Added
+
+- **Natural numeric file sorting**: file tree entries now sort with natural alphanumeric ordering (`natural_cmp`), so numbered files and folders (e.g. `1`, `2`, ..., `10`) order sequentially instead of lexicographical order (`1`, `10`, `2`).
+- **Dedicated Collapse All button**: streamlined sidebar header action to a dedicated Collapse All button (`collapseAll`), removing the expand toggle and unused recursive `expandAll` tree traversal.
+
 ## 0.2.3 - 29-09-2026
 
 ### Added

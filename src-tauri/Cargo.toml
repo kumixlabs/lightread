@@ -1,6 +1,6 @@
 [package]
 name = "lightread"
-version = "0.2.3"
+version = "0.2.4"
 description = "LightRead - Read. Edit. Preview. Nothing Else."
 authors = ["Kumix Labs"]
 license = "MIT"

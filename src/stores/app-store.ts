@@ -150,7 +150,7 @@ interface AppState {
   commitRename: (newName: string) => Promise<void>;
   deleteNode: (path: string) => Promise<void>;
   cancelFsEdit: () => void;
-  expandAll: () => Promise<void>;
+  collapseAll: () => void;
 
   /** Editing */
   updateDraft: (tabId: string, content: string) => void;
@@ -652,24 +652,7 @@ export const useStore = create<AppState>()(
         }
       },
 
-      expandAll: async () => {
-        const { tree } = get().workspace;
-        if (tree.length === 0) return;
-        const paths: string[] = [];
-        // ponytail: sequential walk to avoid flooding hundreds of concurrent
-        // fs reads. If huge repos feel slow, add a depth cap.
-        const walk = async (nodes: FileNode[]): Promise<void> => {
-          for (const n of nodes) {
-            if (!n.isDir) continue;
-            paths.push(toPosix(n.path));
-            markTreeRead(); // our reads emit watcher echoes on WSL/drvfs
-            const children = await readDirectory(n.path, 1);
-            await walk(children);
-          }
-        };
-        await walk(tree);
-        set({ expandedDirs: new Set(paths) });
-      },
+      collapseAll: () => set({ expandedDirs: new Set<string>() }),
 
       updateDraft: (tabId: string, content: string) => {
         set((state) => ({

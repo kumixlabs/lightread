@@ -145,7 +145,11 @@ fn read_directory_inner(
         match (a_is_dir, b_is_dir) {
             (true, false) => std::cmp::Ordering::Less,
             (false, true) => std::cmp::Ordering::Greater,
-            _ => a.file_name().cmp(&b.file_name()),
+            _ => {
+                let a_name = a.file_name();
+                let b_name = b.file_name();
+                natural_cmp(&a_name.to_string_lossy(), &b_name.to_string_lossy())
+            }
         }
     });
 
@@ -323,5 +327,85 @@ pub fn write_app_config(app: tauri::AppHandle, content: String) -> Result<(), St
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
     std::fs::write(&config_path, content).map_err(|e| e.to_string())
+}
+
+/// Natural sort comparison (alphanumeric/human sorting).
+/// Orders embedded numbers by numeric value (e.g. "2" before "10")
+/// while remaining case-insensitive.
+pub fn natural_cmp(a: &str, b: &str) -> std::cmp::Ordering {
+    let mut a_bytes = a.as_bytes();
+    let mut b_bytes = b.as_bytes();
+    let mut tie_breaker = std::cmp::Ordering::Equal;
+
+    while !a_bytes.is_empty() && !b_bytes.is_empty() {
+        if a_bytes[0].is_ascii_digit() && b_bytes[0].is_ascii_digit() {
+            let a_len = a_bytes.iter().take_while(|b| b.is_ascii_digit()).count();
+            let b_len = b_bytes.iter().take_while(|b| b.is_ascii_digit()).count();
+
+            let a_digits = &a_bytes[..a_len];
+            let b_digits = &b_bytes[..b_len];
+
+            let a_nonzero = a_digits.iter().position(|&b| b != b'0').unwrap_or(a_len);
+            let b_nonzero = b_digits.iter().position(|&b| b != b'0').unwrap_or(b_len);
+
+            let a_val = &a_digits[a_nonzero..];
+            let b_val = &b_digits[b_nonzero..];
+
+            match a_val.len().cmp(&b_val.len()) {
+                std::cmp::Ordering::Equal => {
+                    let val_cmp = a_val.cmp(b_val);
+                    if val_cmp != std::cmp::Ordering::Equal {
+                        return val_cmp;
+                    }
+                    if tie_breaker == std::cmp::Ordering::Equal && a_len != b_len {
+                        tie_breaker = a_len.cmp(&b_len);
+                    }
+                }
+                ord => return ord,
+            }
+
+            a_bytes = &a_bytes[a_len..];
+            b_bytes = &b_bytes[b_len..];
+        } else {
+            let ca = a_bytes[0].to_ascii_lowercase();
+            let cb = b_bytes[0].to_ascii_lowercase();
+            if ca != cb {
+                return ca.cmp(&cb);
+            }
+            a_bytes = &a_bytes[1..];
+            b_bytes = &b_bytes[1..];
+        }
+    }
+
+    match a_bytes.len().cmp(&b_bytes.len()) {
+        std::cmp::Ordering::Equal => {
+            if tie_breaker != std::cmp::Ordering::Equal {
+                tie_breaker
+            } else {
+                a.cmp(b)
+            }
+        }
+        ord => ord,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_natural_sort_ordering() {
+        let mut list = vec!["1", "10", "11", "2", "3", "4", "5", "20"];
+        list.sort_by(|a, b| natural_cmp(a, b));
+        assert_eq!(list, vec!["1", "2", "3", "4", "5", "10", "11", "20"]);
+
+        let mut files = vec!["file10.txt", "file1.txt", "file2.txt", "file20.txt"];
+        files.sort_by(|a, b| natural_cmp(a, b));
+        assert_eq!(files, vec!["file1.txt", "file2.txt", "file10.txt", "file20.txt"]);
+
+        let mut mixed = vec!["item1", "Item2", "item10"];
+        mixed.sort_by(|a, b| natural_cmp(a, b));
+        assert_eq!(mixed, vec!["item1", "Item2", "item10"]);
+    }
 }
 

@@ -1,12 +1,4 @@
-import {
-  BookOpenText,
-  ChevronsDownUp,
-  ChevronsUpDown,
-  FolderOpen,
-  FolderX,
-  RefreshCw,
-  Search,
-} from "lucide-react";
+import { BookOpenText, ChevronsDownUp, FolderOpen, FolderX, RefreshCw, Search } from "lucide-react";
 
 import { Badge } from "@kumix/ui/ui/badge";
 import { Button } from "@kumix/ui/ui/button";
@@ -23,15 +15,9 @@ export function Sidebar() {
   const fileSearch = useStore((s) => s.fileSearch);
   const setFileSearch = useStore((s) => s.setFileSearch);
   const refreshTree = useStore((s) => s.refreshTree);
-  const expandAll = useStore((s) => s.expandAll);
-  const expandedDirs = useStore((s) => s.expandedDirs);
+  const collapseAll = useStore((s) => s.collapseAll);
 
   const hasFolder = !!rootPath;
-
-  const collapsed = expandedDirs.size === 0;
-  const collapseAll = () => {
-    useStore.setState({ expandedDirs: new Set<string>() });
-  };
 
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
@@ -79,19 +65,13 @@ export function Sidebar() {
                   variant="ghost"
                   size="icon"
                   className="size-7 shrink-0 text-sidebar-foreground/70 hover:text-sidebar-foreground"
-                  onClick={() => (collapsed ? void expandAll() : collapseAll())}
+                  onClick={collapseAll}
                 />
               }
             >
-              {collapsed ? (
-                <ChevronsUpDown className="size-3.5" />
-              ) : (
-                <ChevronsDownUp className="size-3.5" />
-              )}
+              <ChevronsDownUp className="size-3.5" />
             </TooltipTrigger>
-            <TooltipContent side="bottom">
-              {collapsed ? "Expand All" : "Collapse All"}
-            </TooltipContent>
+            <TooltipContent side="bottom">Collapse All</TooltipContent>
           </Tooltip>
         </div>
       )}
