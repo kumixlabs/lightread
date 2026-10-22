@@ -1,4 +1,5 @@
 # Build & Validation Commands
+
 - `bun install` — install dependencies
 - `bun test` — run unit tests (Bun test runner)
 - `bun run types:check` — typecheck all project references (`tsc -b`)
@@ -12,6 +13,7 @@
 - `bun tauri build` — production desktop app build
 
 # Architecture & Tech Stack
+
 - **Product**: LightRead — lightweight document reader & editor (PRD: `LightRead-PRD.md`).
 - **Core Stack**: Tauri 2 + React 19 + TypeScript + Vite + Tailwind CSS v4 + `@kumix/ui` + Lucide icons.
 - **State Management**: Zustand store at `src/stores/app-store.ts`.
@@ -39,6 +41,7 @@
   - `lib/tauri-api.ts`: Typed IPC wrapper over Tauri `invoke`, dialog, and process plugins.
 
 # Key Engineering Rules & Invariants
+
 - **Plain-Text Editing Surface**: Editing is strictly notepad-style plain textarea (`TextEditor`). No WYSIWYG, no Monaco, no CodeMirror, no TipTap. Text-based files (markdown source, code, HTML, SVG, CSV) toggle between view mode and plain textarea edit mode.
 - **No File Loss**: Dirty tabs prompt before closing (`UnsavedChangesDialog`). File watcher events detect external modifications and prompt conflict dialogs rather than silently overwriting unsaved work.
 - **OS Trash Only**: Deletions go to OS recycle bin / trash via Rust `delete_path`. Never permanently delete files with irreversible unlinks.

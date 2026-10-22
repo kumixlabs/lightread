@@ -13,7 +13,7 @@ export function Toolbar() {
   const PanelIcon = sidebarVisible ? PanelLeftClose : PanelLeft;
 
   return (
-    <div className="flex h-11 shrink-0 items-center gap-1 border-border border-b bg-background/80 px-2.5 backdrop-blur-sm">
+    <div className="border-border bg-background/80 flex h-11 shrink-0 items-center gap-1 border-b px-2.5 backdrop-blur-sm">
       <Tooltip>
         <TooltipTrigger
           render={<Button variant="ghost" size="icon" className="size-8" onClick={toggleSidebar} />}

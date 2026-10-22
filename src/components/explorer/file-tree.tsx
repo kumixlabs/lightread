@@ -115,7 +115,7 @@ export function FileTree() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">
+      <div className="text-muted-foreground flex items-center justify-center py-8 text-sm">
         Loading...
       </div>
     );
@@ -138,7 +138,7 @@ export function FileTree() {
             />
           )}
           {filteredTree.length === 0 ? (
-            <div className="flex flex-1 items-center justify-center px-4 py-8 text-center text-muted-foreground text-sm">
+            <div className="text-muted-foreground flex flex-1 items-center justify-center px-4 py-8 text-center text-sm">
               {fileSearch ? `No files matching "${fileSearch}"` : "No files found"}
             </div>
           ) : (

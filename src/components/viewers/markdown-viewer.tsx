@@ -177,8 +177,8 @@ export function MarkdownViewer({ file, tabId, draft, previewMode }: MarkdownView
   );
 
   return (
-    <div className="flex h-full flex-col bg-background">
-      <div className="flex h-10 shrink-0 items-center gap-1 border-border border-b px-3">
+    <div className="bg-background flex h-full flex-col">
+      <div className="border-border flex h-10 shrink-0 items-center gap-1 border-b px-3">
         <ModeButton
           active={previewMode}
           onClick={() => toggle(true)}
@@ -194,7 +194,7 @@ export function MarkdownViewer({ file, tabId, draft, previewMode }: MarkdownView
           Source
         </ModeButton>
         {draft !== undefined && draft !== file.content && (
-          <span className="ml-2 text-muted-foreground text-xs">unsaved changes</span>
+          <span className="text-muted-foreground ml-2 text-xs">unsaved changes</span>
         )}
         {previewMode && toc.length >= 3 && (
           <>
@@ -233,8 +233,8 @@ export function MarkdownViewer({ file, tabId, draft, previewMode }: MarkdownView
           )}
         </div>
         {previewMode && showToc && toc.length >= 3 && (
-          <nav className="hidden w-56 shrink-0 overflow-y-auto border-border border-l px-4 py-6 text-sm lg:block">
-            <p className="mb-2 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+          <nav className="border-border hidden w-56 shrink-0 overflow-y-auto border-l px-4 py-6 text-sm lg:block">
+            <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
               On this page
             </p>
             <ul className="space-y-1">
@@ -243,7 +243,7 @@ export function MarkdownViewer({ file, tabId, draft, previewMode }: MarkdownView
                   <button
                     onClick={() => scrollToAnchor(h.id)}
                     className={cn(
-                      "block w-full truncate text-left text-muted-foreground transition-colors hover:text-foreground",
+                      "text-muted-foreground hover:text-foreground block w-full truncate text-left transition-colors",
                       h.level === 2 && "font-medium",
                       h.level === 3 && "pl-3 text-[13px]",
                       h.id === activeId && "text-primary",
@@ -277,7 +277,7 @@ function ModeButton({
     <button
       onClick={onClick}
       className={cn(
-        "inline-flex h-7 items-center gap-1.5 rounded-md px-3 font-medium text-xs transition-colors",
+        "inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors",
         active
           ? "bg-accent text-foreground"
           : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
@@ -327,17 +327,17 @@ function Frontmatter({ data }: { data: FrontmatterData }) {
     <div className="mb-6">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="text-muted-foreground text-xs transition-colors hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground text-xs transition-colors"
       >
         {open ? "▾" : "▸"} Frontmatter · {data.pairs.length} field
         {data.pairs.length !== 1 ? "s" : ""}
       </button>
       {open && (
-        <dl className="mt-2 grid gap-x-4 gap-y-1 rounded-lg border border-border bg-muted/30 p-3 text-xs sm:grid-cols-[minmax(0,10rem)_1fr]">
+        <dl className="border-border bg-muted/30 mt-2 grid gap-x-4 gap-y-1 rounded-lg border p-3 text-xs sm:grid-cols-[minmax(0,10rem)_1fr]">
           {data.pairs.map(([k, v]) => (
             <div key={k} className="col-span-full grid grid-cols-[minmax(0,10rem)_1fr] gap-x-4">
-              <dt className="font-medium font-mono text-muted-foreground">{k}</dt>
-              <dd className="wrap-break-word font-mono">{v || "\u2014"}</dd>
+              <dt className="text-muted-foreground font-mono font-medium">{k}</dt>
+              <dd className="font-mono wrap-break-word">{v || "\u2014"}</dd>
             </div>
           ))}
         </dl>
@@ -389,7 +389,7 @@ function ShikiBlock({ children }: { children?: React.ReactNode }) {
   return (
     <div className="group relative my-5">
       {lang !== "text" && (
-        <span className="absolute -top-2 left-3 z-10 rounded bg-muted px-1.5 font-mono text-[10px] text-muted-foreground uppercase tracking-wide">
+        <span className="bg-muted text-muted-foreground absolute -top-2 left-3 z-10 rounded px-1.5 font-mono text-[10px] tracking-wide uppercase">
           {lang}
         </span>
       )}
@@ -400,13 +400,13 @@ function ShikiBlock({ children }: { children?: React.ReactNode }) {
           dangerouslySetInnerHTML={{ __html: html }}
         />
       ) : (
-        <pre className="overflow-x-auto rounded-lg bg-muted/40 p-4 text-[13px] leading-relaxed">
+        <pre className="bg-muted/40 overflow-x-auto rounded-lg p-4 text-[13px] leading-relaxed">
           <code>{code}</code>
         </pre>
       )}
       <button
         onClick={copy}
-        className="absolute top-2 right-2 inline-flex size-7 items-center justify-center rounded-md bg-background/80 text-muted-foreground opacity-0 shadow-sm transition-opacity hover:text-foreground group-hover:opacity-100"
+        className="bg-background/80 text-muted-foreground hover:text-foreground absolute top-2 right-2 inline-flex size-7 items-center justify-center rounded-md opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
         title="Copy code"
       >
         {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}

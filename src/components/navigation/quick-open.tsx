@@ -141,9 +141,9 @@ export function QuickOpen() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="gap-0 overflow-hidden rounded-xl border-border p-0 shadow-2xl sm:max-w-2xl [&>button]:hidden">
-        <div className="flex items-center gap-2.5 border-border border-b px-4 py-3">
-          <Search className="size-4 text-muted-foreground" />
+      <DialogContent className="border-border gap-0 overflow-hidden rounded-xl p-0 shadow-2xl sm:max-w-2xl [&>button]:hidden">
+        <div className="border-border flex items-center gap-2.5 border-b px-4 py-3">
+          <Search className="text-muted-foreground size-4" />
           <Input
             ref={inputRef}
             value={query}
@@ -155,7 +155,7 @@ export function QuickOpen() {
         </div>
         <div className="max-h-100 overflow-y-auto p-1.5">
           {filtered.length === 0 && (
-            <div className="px-4 py-8 text-center text-muted-foreground text-sm">
+            <div className="text-muted-foreground px-4 py-8 text-center text-sm">
               No matching files
             </div>
           )}
@@ -179,7 +179,7 @@ export function QuickOpen() {
                 {item.name}
               </span>
               {item.relPath !== item.name && (
-                <span className="ml-auto shrink-0 truncate pl-2 text-muted-foreground text-xs">
+                <span className="text-muted-foreground ml-auto shrink-0 truncate pl-2 text-xs">
                   {item.relPath}
                 </span>
               )}

@@ -46,7 +46,6 @@ cargo check          # in src-tauri/
 ## Project Rules
 
 Read [AGENTS.md](./AGENTS.md) for the full architecture notes. The non-negotiables:
-
 1. **Plain-text editing only.** No WYSIWYG, no Monaco/CodeMirror/TipTap. Highlighted views are read-only; editing is always a plain textarea.
 2. **Never execute user files.** No terminal, no eval. HTML/SVG previews only in `sandbox=""` iframes.
 3. **Writes only via Rust `write_text_file`.** No fs plugin, no delete/rename.
@@ -67,7 +66,6 @@ docs: update PRD viewer table
 ## Releases (Maintainers Only)
 
 Releases are automated via GitHub Actions (`.github/workflows/release.yml`):
-
 1. Bump version in **all three files** (kept in sync): `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`. Update `CHANGELOG.md`.
 2. Commit, tag `vX.Y.Z`, push. CI builds Windows (NSIS + portable), macOS (dmg x2), and Linux (AppImage + deb), signs updater artifacts, and publishes the GitHub Release.
 3. Users on older versions get the update via the built-in auto-updater.

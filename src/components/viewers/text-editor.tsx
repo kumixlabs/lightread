@@ -94,7 +94,7 @@ export function TextEditor({ tabId, content, onCursor, readOnly, className }: Te
         <mark
           key={start}
           data-current={i === findIndex || undefined}
-          className="rounded-xs bg-yellow-300/40 text-transparent data-current:bg-primary/70 dark:bg-yellow-500/30"
+          className="data-current:bg-primary/70 rounded-xs bg-yellow-300/40 text-transparent dark:bg-yellow-500/30"
         >
           {content.slice(start, end)}
         </mark>,
@@ -110,14 +110,14 @@ export function TextEditor({ tabId, content, onCursor, readOnly, className }: Te
   return (
     <div
       data-viewer-content
-      className={cn("relative h-full w-full overflow-hidden bg-background", className)}
+      className={cn("bg-background relative h-full w-full overflow-hidden", className)}
     >
       {showHighlight && (
         <div
           ref={highlightRef}
           aria-hidden
           className={cn(
-            "pointer-events-none absolute inset-0 select-none overflow-hidden text-transparent",
+            "pointer-events-none absolute inset-0 overflow-hidden text-transparent select-none",
             sharedTypo,
           )}
           style={{
@@ -148,7 +148,7 @@ export function TextEditor({ tabId, content, onCursor, readOnly, className }: Te
         readOnly={readOnly}
         wrap={wordWrap ? "soft" : "off"}
         className={cn(
-          "absolute inset-0 h-full w-full resize-none bg-transparent text-foreground outline-none",
+          "text-foreground absolute inset-0 h-full w-full resize-none bg-transparent outline-none",
           sharedTypo,
         )}
         style={{ fontSize: `${fontSize}px`, lineHeight }}

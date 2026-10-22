@@ -47,7 +47,7 @@ export function StatusBar() {
   const ThemeBtn = (
     <button
       onClick={cycleTheme}
-      className="flex items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors hover:bg-accent"
+      className="hover:bg-accent flex items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors"
       title={`Theme: ${theme}`}
     >
       <ThemeIcon className="size-3.5" />
@@ -57,7 +57,7 @@ export function StatusBar() {
 
   if (!activeTab) {
     return (
-      <div className="flex h-7 items-center justify-end border-border border-t bg-muted/30 px-3 text-[11px] text-muted-foreground">
+      <div className="border-border bg-muted/30 text-muted-foreground flex h-7 items-center justify-end border-t px-3 text-[11px]">
         {ThemeBtn}
       </div>
     );
@@ -69,7 +69,7 @@ export function StatusBar() {
   const isChanged = changedFiles.has(file.path);
 
   return (
-    <div className="flex h-7 items-center gap-3 overflow-hidden border-border border-t bg-muted/30 px-3 text-[11px] text-muted-foreground">
+    <div className="border-border bg-muted/30 text-muted-foreground flex h-7 items-center gap-3 overflow-hidden border-t px-3 text-[11px]">
       {isChanged && (
         <span className="flex shrink-0 items-center gap-1 rounded bg-yellow-500/15 px-1.5 py-0.5 text-yellow-600 dark:text-yellow-500">
           <AlertCircle className="size-3" />
@@ -79,7 +79,7 @@ export function StatusBar() {
       <span className="truncate">{filePath}</span>
       <div className="flex-1" />
       {file.language && (
-        <span className="shrink-0 font-medium text-foreground/70">{file.language}</span>
+        <span className="text-foreground/70 shrink-0 font-medium">{file.language}</span>
       )}
       {stats.lines > 0 && (
         <span className="shrink-0 tabular-nums">{stats.lines.toLocaleString()} lines</span>
@@ -99,11 +99,11 @@ export function StatusBar() {
         </>
       )}
       <span className="shrink-0 tabular-nums">{formatBytes(file.size)}</span>
-      <div className="h-3 w-px bg-border" />
+      <div className="bg-border h-3 w-px" />
       {updateAvailable && (
         <button
           onClick={() => useStore.getState().setSettingsOpen(true)}
-          className="flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-primary transition-colors hover:bg-accent"
+          className="text-primary hover:bg-accent flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors"
           title={`Version ${updateAvailable} available — click to install`}
         >
           <ArrowUpCircle className="size-3.5" />v{updateAvailable}

@@ -7,6 +7,7 @@ A lightweight document reader & editor for Windows, macOS, and Linux. Think Wind
 ## Features
 
 ### Viewing
+
 - **Markdown preview** — GitHub-flavored: Shiki-highlighted code blocks, tables, task lists, local images via asset protocol, hover `#` anchor links, Outline / TOC panel with scroll-spy, collapsible YAML frontmatter. Raw HTML is stripped for safety.
 - **Code viewer** — Shiki syntax highlighting (100+ languages, lazy-loaded), themes, line numbers, word wrap. Read-only by design.
 - **Customizable typography** — font size (10–28 px) and line height (1.00–3.00) synced across preview, editor, and code viewers.
@@ -19,12 +20,14 @@ A lightweight document reader & editor for Windows, macOS, and Linux. Think Wind
 - **Large files** — over 10 MB open truncated & read-only; over 100 MB refused.
 
 ### Editing
+
 - **Notepad-style plain text** for `.md`, `.txt`, `.log`, `.ini`, `.env` and friends — a native textarea, no distractions, full native undo.
 - **`Ctrl+S`** save (UTF-8), **`Ctrl+Shift+S`** Save As, dirty indicator (`•`) on tabs, unsaved-change prompts on close/exit.
 - **Find & Replace** (`Ctrl+F` / `Ctrl+H`) with match case and replace-all.
 - **External changes** — auto-reload when clean; Reload/Keep-mine banner when you have unsaved edits. Your input is never lost.
 
 ### Workspace
+
 - **Explorer** — lazy file tree with filter; `.git`/`node_modules`/… ignored.
 - **Live tree** — external deletes/renames/creates show up automatically, no refresh needed.
 - **Create / rename / delete** — right-click in the sidebar: New File, New Folder, Rename (inline), Move to trash (recoverable via OS trash).
@@ -32,6 +35,7 @@ A lightweight document reader & editor for Windows, macOS, and Linux. Think Wind
 - **Quick open** (`Ctrl+P`), **project search** (`Ctrl+Shift+F`), **recents palette** (`Ctrl+R`), breadcrumbs, recents.
 - **Session restore** — last open tabs (paths only) reopen on launch.
 ### Platform & System
+
 - **Window state persistence** — remembers window size, position, and maximized state across sessions.
 - **OS configuration persistence** — settings, recents, and sessions sync directly to standard OS config folders (`lightread/config.json`).
 - **Auto-updater** — built-in update checker & installer in Settings backed by GitHub Releases and cryptographic signatures.
@@ -44,11 +48,11 @@ A lightweight document reader & editor for Windows, macOS, and Linux. Think Wind
 
 Grab the latest release for your platform from [GitHub Releases](https://github.com/kumixlabs/lightread/releases):
 
-| Platform | Artifact |
-| --- | --- |
-| Windows | `*-setup.exe` (installer) or portable `.exe` (needs WebView2 Runtime) |
-| macOS (Apple Silicon / Intel) | `*.dmg` |
-| Linux | `*.AppImage` or `*.deb` |
+| Platform                      | Artifact                                                              |
+| ----------------------------- | --------------------------------------------------------------------- |
+| Windows                       | `*-setup.exe` (installer) or portable `.exe` (needs WebView2 Runtime) |
+| macOS (Apple Silicon / Intel) | `*.dmg`                                                               |
+| Linux                         | `*.AppImage` or `*.deb`                                               |
 
 > **Linux audio/video preview**: relies on system GStreamer codecs. If MP3/MP4 fails to play, install them once:
 > `sudo apt install gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav`

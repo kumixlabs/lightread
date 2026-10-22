@@ -149,8 +149,8 @@ export function CodeViewer({
 
   if (!highlightFailed && !editing && (!highlighter || !themeReady)) {
     return (
-      <div className="flex h-full items-center justify-center gap-2 text-muted-foreground text-sm">
-        <div className="size-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+      <div className="text-muted-foreground flex h-full items-center justify-center gap-2 text-sm">
+        <div className="border-muted-foreground size-4 animate-spin rounded-full border-2 border-t-transparent" />
         Loading...
       </div>
     );
@@ -158,10 +158,10 @@ export function CodeViewer({
 
   if (editing && tabId) {
     return (
-      <div className="relative h-full overflow-hidden bg-background">
+      <div className="bg-background relative h-full overflow-hidden">
         <button
           onClick={() => setEditing(false)}
-          className="absolute top-3 right-3 z-10 inline-flex items-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 py-1 text-muted-foreground text-xs shadow-sm backdrop-blur transition-all hover:bg-accent hover:text-foreground"
+          className="border-border bg-background/90 text-muted-foreground hover:bg-accent hover:text-foreground absolute top-3 right-3 z-10 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs shadow-sm backdrop-blur transition-all"
         >
           <Eye className="size-3.5" />
           View
@@ -172,12 +172,12 @@ export function CodeViewer({
   }
 
   return (
-    <div className="relative h-full overflow-hidden bg-background">
+    <div className="bg-background relative h-full overflow-hidden">
       <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1.5">
         {tabId && !readOnly && (
           <button
             onClick={() => setEditing(true)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 py-1 text-muted-foreground text-xs shadow-sm backdrop-blur transition-all hover:bg-accent hover:text-foreground"
+            className="border-border bg-background/90 text-muted-foreground hover:bg-accent hover:text-foreground inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs shadow-sm backdrop-blur transition-all"
           >
             <Pencil className="size-3.5" />
             Edit
@@ -186,7 +186,7 @@ export function CodeViewer({
         <button
           onClick={handleCopy}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 py-1 text-muted-foreground text-xs shadow-sm backdrop-blur transition-all hover:bg-accent hover:text-foreground",
+            "border-border bg-background/90 text-muted-foreground hover:bg-accent hover:text-foreground inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs shadow-sm backdrop-blur transition-all",
             copied && "text-green-500",
           )}
         >

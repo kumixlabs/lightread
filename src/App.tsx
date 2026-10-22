@@ -248,13 +248,13 @@ export default function App() {
       <div className="relative h-screen w-screen overflow-hidden">
         <AppShell />
         {isDragOver && (
-          <div className="fade-in-0 pointer-events-none absolute inset-0 z-50 flex animate-in flex-col items-center justify-center gap-3 border-2 border-primary border-dashed bg-background/85 backdrop-blur-sm duration-150">
-            <div className="flex items-center gap-3 text-primary">
+          <div className="fade-in-0 animate-in border-primary bg-background/85 pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 border-2 border-dashed backdrop-blur-sm duration-150">
+            <div className="text-primary flex items-center gap-3">
               <FolderDown className="size-10 stroke-[1.5]" />
               <FileUp className="size-10 stroke-[1.5]" />
             </div>
             <div className="text-center">
-              <p className="font-semibold text-base text-foreground">Drop files or folder here</p>
+              <p className="text-foreground text-base font-semibold">Drop files or folder here</p>
               <p className="text-muted-foreground text-xs">
                 Folders will open in explorer, files in new tabs
               </p>

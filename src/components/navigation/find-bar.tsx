@@ -136,7 +136,7 @@ export function FindBar() {
   if (!findOpen) return null;
 
   return (
-    <div className="absolute top-3 right-3 z-30 flex animate-fade-in flex-col items-start gap-1 rounded-lg border border-border bg-background/95 p-1 shadow-lg backdrop-blur">
+    <div className="animate-fade-in border-border bg-background/95 absolute top-3 right-3 z-30 flex flex-col items-start gap-1 rounded-lg border p-1 shadow-lg backdrop-blur">
       <div className="flex items-center gap-1">
         <div className="relative flex items-center">
           <Input
@@ -146,7 +146,7 @@ export function FindBar() {
             onKeyDown={handleKeyDown}
             placeholder="Find"
             className={cn(
-              "h-8 w-52 rounded-md border border-border bg-muted/50 pr-8 text-sm shadow-none focus-visible:ring-1",
+              "border-border bg-muted/50 h-8 w-52 rounded-md border pr-8 text-sm shadow-none focus-visible:ring-1",
               findQuery &&
                 matches.length === 0 &&
                 "border-destructive/40 bg-destructive/10 text-destructive focus-visible:ring-destructive/40",
@@ -217,7 +217,7 @@ export function FindBar() {
             onKeyDown={handleReplaceKeyDown}
             placeholder={canReplace ? "Replace with" : "Read-only file"}
             disabled={!canReplace}
-            className="h-8 w-52 rounded-md border border-border bg-muted/50 text-sm shadow-none focus-visible:ring-1"
+            className="border-border bg-muted/50 h-8 w-52 rounded-md border text-sm shadow-none focus-visible:ring-1"
           />
           <Button
             variant="ghost"

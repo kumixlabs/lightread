@@ -90,7 +90,7 @@ export function NameInput({
           }
         }}
         onBlur={() => finish(true)}
-        className="h-6 w-full rounded-sm border border-ring bg-background px-1 text-[13px] outline-none"
+        className="border-ring bg-background h-6 w-full rounded-sm border px-1 text-[13px] outline-none"
       />
     </div>
   );
@@ -266,7 +266,7 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps) {
         initial={reduce ? false : { opacity: 0, scaleY: 0 }}
         animate={{ opacity: 1, scaleY: 1 }}
         transition={reduce ? { duration: 0 } : BRANCH_DRAW}
-        className="absolute top-0 bottom-0 w-px origin-top bg-border/70"
+        className="bg-border/70 absolute top-0 bottom-0 w-px origin-top"
         style={{ left: (depth - 1) * 14 + 13 }}
       />
     ) : null;
@@ -394,7 +394,7 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps) {
               <div
                 role="treeitem"
                 aria-expanded={isExpanded}
-                className="group relative flex cursor-pointer select-none items-center gap-1 py-0.75 pr-2 text-[13px] transition-colors hover:bg-sidebar-accent/50"
+                className="group hover:bg-sidebar-accent/50 relative flex cursor-pointer items-center gap-1 py-0.75 pr-2 text-[13px] transition-colors select-none"
                 style={{ paddingLeft }}
                 onClick={handleClick}
                 onKeyDown={handleKeyDown}
@@ -404,11 +404,11 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps) {
                   aria-hidden="true"
                   animate={{ rotate: isExpanded ? 90 : 0 }}
                   transition={reduce ? { duration: 0 } : SPRING_SWAP}
-                  className="grid size-3.5 shrink-0 place-items-center text-muted-foreground/70"
+                  className="text-muted-foreground/70 grid size-3.5 shrink-0 place-items-center"
                 >
                   <ChevronRight className="size-3.5" />
                 </motion.span>
-                <span className="relative grid size-4 shrink-0 place-items-center text-muted-foreground">
+                <span className="text-muted-foreground relative grid size-4 shrink-0 place-items-center">
                   {reduce ? (
                     isExpanded ? (
                       <FolderOpen className="size-4" />
@@ -462,7 +462,7 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps) {
               )}
               {loadingChildren && (
                 <div
-                  className="py-1 text-muted-foreground/60 text-xs"
+                  className="text-muted-foreground/60 py-1 text-xs"
                   style={{ paddingLeft: paddingLeft + 20 }}
                 >
                   Loading...
@@ -470,7 +470,7 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps) {
               )}
               {!loadingChildren && lazyChildren && lazyChildren.length === 0 && (
                 <div
-                  className="py-1 text-muted-foreground/40 text-xs"
+                  className="text-muted-foreground/40 py-1 text-xs"
                   style={{ paddingLeft: paddingLeft + 20 }}
                 >
                   Empty
@@ -495,9 +495,9 @@ export function FileTreeNode({ node, depth }: FileTreeNodeProps) {
             role="treeitem"
             aria-selected={isActive}
             className={cn(
-              "relative flex cursor-pointer select-none items-center gap-1 py-0.75 pr-2 text-[13px] transition-colors",
+              "relative flex cursor-pointer items-center gap-1 py-0.75 pr-2 text-[13px] transition-colors select-none",
               isActive
-                ? "bg-primary/12 font-medium text-primary"
+                ? "bg-primary/12 text-primary font-medium"
                 : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50",
             )}
             style={{ paddingLeft }}

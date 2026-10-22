@@ -26,10 +26,10 @@ class ViewerErrorBoundary extends Component<{ children: ReactNode }, { error: Er
   render() {
     if (this.state.error) {
       return (
-        <div className="flex h-full flex-col items-center justify-center gap-3 bg-background p-6 text-center">
-          <CircleAlert className="size-8 text-destructive" />
-          <p className="font-medium text-sm">This file failed to render</p>
-          <p className="max-w-md text-muted-foreground text-xs">{String(this.state.error)}</p>
+        <div className="bg-background flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+          <CircleAlert className="text-destructive size-8" />
+          <p className="text-sm font-medium">This file failed to render</p>
+          <p className="text-muted-foreground max-w-md text-xs">{String(this.state.error)}</p>
           <Button size="sm" variant="outline" onClick={() => this.setState({ error: null })}>
             Try again
           </Button>
@@ -118,7 +118,7 @@ export function ViewerRouter() {
 
   if (fileLoading) {
     return (
-      <div className="flex h-full flex-col gap-3 bg-background p-6">
+      <div className="bg-background flex h-full flex-col gap-3 p-6">
         <Skeleton className="h-4 w-32" />
         <Skeleton className="h-4 w-48" />
         <div className="mt-4 space-y-2">
@@ -132,10 +132,10 @@ export function ViewerRouter() {
 
   if (fileError && !activeTab) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 bg-background p-6 text-center">
-        <AlertTriangle className="size-8 text-destructive" />
-        <p className="font-medium text-sm">Could not open file</p>
-        <p className="max-w-md text-muted-foreground text-xs">{fileError}</p>
+      <div className="bg-background flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+        <AlertTriangle className="text-destructive size-8" />
+        <p className="text-sm font-medium">Could not open file</p>
+        <p className="text-muted-foreground max-w-md text-xs">{fileError}</p>
       </div>
     );
   }
@@ -226,15 +226,15 @@ export function ViewerRouter() {
   };
 
   return (
-    <div className="flex h-full flex-col bg-background">
+    <div className="bg-background flex h-full flex-col">
       {saveError && (
-        <div className="flex items-center gap-2 border-red-500/30 border-b bg-red-500/10 px-4 py-2 text-[13px] text-red-700 dark:text-red-400">
+        <div className="flex items-center gap-2 border-b border-red-500/30 bg-red-500/10 px-4 py-2 text-[13px] text-red-700 dark:text-red-400">
           <AlertTriangle className="size-3.5 shrink-0" />
           <span className="truncate">{saveError}</span>
         </div>
       )}
       {isMissing && (
-        <div className="flex items-center justify-between gap-2 border-red-500/30 border-b bg-red-500/10 px-4 py-2 text-[13px] text-red-700 dark:text-red-400">
+        <div className="flex items-center justify-between gap-2 border-b border-red-500/30 bg-red-500/10 px-4 py-2 text-[13px] text-red-700 dark:text-red-400">
           <span className="flex items-center gap-2">
             <AlertTriangle className="size-3.5" />
             This file was deleted or moved on disk.
@@ -260,7 +260,7 @@ export function ViewerRouter() {
         </div>
       )}
       {isChanged && (
-        <div className="flex items-center justify-between gap-2 border-yellow-500/30 border-b bg-yellow-500/10 px-4 py-2 text-[13px] text-yellow-700 dark:text-yellow-400">
+        <div className="flex items-center justify-between gap-2 border-b border-yellow-500/30 bg-yellow-500/10 px-4 py-2 text-[13px] text-yellow-700 dark:text-yellow-400">
           <span className="flex items-center gap-2">
             <AlertTriangle className="size-3.5" />
             {activeTab.draft !== undefined && activeTab.draft !== file.content
@@ -289,7 +289,7 @@ export function ViewerRouter() {
         </div>
       )}
       {file.truncated && (
-        <div className="flex items-center gap-2 border-blue-500/30 border-b bg-blue-500/10 px-4 py-2 text-[13px] text-blue-700 dark:text-blue-400">
+        <div className="flex items-center gap-2 border-b border-blue-500/30 bg-blue-500/10 px-4 py-2 text-[13px] text-blue-700 dark:text-blue-400">
           <AlertTriangle className="size-3.5" />
           Large file — showing first 10 MB only. Read-only.
         </div>

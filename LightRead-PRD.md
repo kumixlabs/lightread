@@ -7,7 +7,7 @@
 **Primary Audience:** Anyone who needs to open, read, and lightly edit
 documents without launching a full code editor.
 
-------------------------------------------------------------------------
+---
 
 # 1. Product Overview
 
@@ -15,7 +15,6 @@ documents without launching a full code editor.
 
 LightRead is a lightweight desktop document app — think **Windows
 Notepad, but better**:
-
 -   Opens any common text-based file instantly.
 -   Edits plain text like Notepad (simple, no distraction).
 -   Renders Markdown as a formatted document, with a toggle between
@@ -41,12 +40,11 @@ IntelliSense, no language servers, no debugging, no terminal, no Git.
 
 > Open any document, read it nicely, edit it simply.
 
-------------------------------------------------------------------------
+---
 
 # 2. Problem Statement
 
 Typical situations:
-
 -   Read and fix a typo in a `README.md`.
 -   Take quick notes in a `.txt` file.
 -   Skim a large `.log` file.
@@ -60,7 +58,7 @@ LightRead reduces this to:
 
 > **Open LightRead → open file/folder → read → edit → Ctrl+S.**
 
-------------------------------------------------------------------------
+---
 
 # 3. Product Goals
 
@@ -89,12 +87,11 @@ LightRead reduces this to:
 5.  Reasonable handling of large files.
 6.  Architecture that makes new viewers/editors easy to add.
 
-------------------------------------------------------------------------
+---
 
 # 4. Non-Goals
 
 Explicitly outside the scope:
-
 -   WYSIWYG Markdown editing.
 -   Rich-text editing of any kind.
 -   Autocomplete, IntelliSense, language servers.
@@ -116,7 +113,7 @@ Explicitly outside the scope:
 Editing is deliberately **plain text only**. If the user needs more,
 they should open a real editor.
 
-------------------------------------------------------------------------
+---
 
 # 5. Target Platform
 
@@ -134,7 +131,7 @@ deb); file associations registered per platform.
 No platform-specific complexity unless required for cross-platform
 architecture.
 
-------------------------------------------------------------------------
+---
 
 # 6. Technology Stack
 
@@ -159,7 +156,7 @@ architecture.
 
 Use latest stable versions at implementation time.
 
-------------------------------------------------------------------------
+---
 
 # 7. Core Product Principles
 
@@ -172,7 +169,6 @@ read-only: LightRead is not where software gets written.
 ## 7.2 Simple Editing
 
 Editing must feel like Notepad:
-
 -   A single plain-text editing surface per file.
 -   No formatting toolbar, no modes, no panels.
 -   `Ctrl+S` saves. That is the whole editing model.
@@ -197,7 +193,7 @@ No network. No telemetry. Files never leave the machine.
 Explorer + tabs + quick open, like users already know. Keyboard-first
 where possible.
 
-------------------------------------------------------------------------
+---
 
 # 8. Main User Workflows
 
@@ -234,7 +230,7 @@ where possible.
 2.  Confirm dialog: **Save / Don't Save / Cancel**.
 3.  Same prompt on app exit with unsaved tabs.
 
-------------------------------------------------------------------------
+---
 
 # 9. Drag and Drop
 
@@ -251,7 +247,7 @@ Replaces the current workspace, reloads the tree.
 
 Opens each file in its own tab, activates the last.
 
-------------------------------------------------------------------------
+---
 
 # 10. Application Layout
 
@@ -273,7 +269,7 @@ Opens each file in its own tab, activates the last.
 -   Sidebar collapsible (`Ctrl+B`).
 -   No bottom panel. No module switcher.
 
-------------------------------------------------------------------------
+---
 
 # 11. Sidebar / File Explorer
 
@@ -292,7 +288,7 @@ Opens each file in its own tab, activates the last.
     input), Rename (inline), Move to trash (OS trash, recoverable).
     Deleting an item with unsaved open tabs is blocked.
 
-------------------------------------------------------------------------
+---
 
 # 12. File Type Registry
 
@@ -306,12 +302,11 @@ A single registry decides, per filename, the `viewerType`:
 | `csv`         | Table view (read-only)                    | No       |
 | `image`       | Image viewer (zoom/fit)                   | No       |
 | `svg`         | Preview ↔ Source                          | No       |
-| `media`       | Native `<audio>`/`<video>` preview player  | No       |
+| `media`       | Native `<audio>`/`<video>` preview player | No       |
 | `html`        | Sandboxed preview ↔ Source                | No       |
 | `unsupported` | Message + open-with-default-app action    | No       |
 
 Detection order:
-
 1.  Exact-name map (Dockerfile, Makefile, dotfiles).
 2.  Extension map.
 3.  Fallbacks: known image ext → `image` viewer; known audio/video ext →
@@ -319,7 +314,7 @@ Detection order:
 
 **Editable set** = `markdown` + `text` (see §14).
 
-------------------------------------------------------------------------
+---
 
 # 13. Supported File Types
 
@@ -377,7 +372,7 @@ Sandboxed preview (`sandbox=""` iframe, no scripts) ↔ Source
 Binary/unknown files show metadata (name, size, type) and an
 **Open in default app** button.
 
-------------------------------------------------------------------------
+---
 
 # 14. Editing Model
 
@@ -427,7 +422,7 @@ Binary/unknown files show metadata (name, size, type) and an
 -   Replace (`Ctrl+H`): replace / replace-all for editable files;
     disabled in read-only surfaces.
 
-------------------------------------------------------------------------
+---
 
 # 15. Viewer UX (Read-Only Types)
 
@@ -465,7 +460,7 @@ pretty-printed for display.
 -   Icon + file name + size + detected type label.
 -   Buttons: **Open in default app** (system opener), **Copy path**.
 
-------------------------------------------------------------------------
+---
 
 # 16. Tabs
 
@@ -476,7 +471,7 @@ pretty-printed for display.
 -   Dirty indicator `•` on unsaved edits (§14.3).
 -   Tab shows filename; full path in tooltip.
 
-------------------------------------------------------------------------
+---
 
 # 17. Quick Open
 
@@ -484,7 +479,7 @@ pretty-printed for display.
 -   Fuzzy match on relative path; Enter opens top result.
 -   Recent files included when no folder is open.
 
-------------------------------------------------------------------------
+---
 
 # 18. Search
 
@@ -504,14 +499,14 @@ Sidebar filter-as-you-type on file names.
 -   `Ctrl+F` in-bar for current file (all viewer types where text
     exists), `Ctrl+H` adds replace for editable files.
 
-------------------------------------------------------------------------
+---
 
 # 19. Breadcrumbs
 
 Path segments of the active file relative to workspace root.
 Display-first.
 
-------------------------------------------------------------------------
+---
 
 # 20. Recent Files and Projects
 
@@ -520,7 +515,7 @@ Display-first.
 -   Shown on welcome screen and sidebar.
 -   Clear-all action. Cap ~20 entries.
 
-------------------------------------------------------------------------
+---
 
 # 21. File Change Detection
 
@@ -528,7 +523,7 @@ Display-first.
 -   Frontend event `file-changed` → per §14.4 conflict rules.
 -   Watcher stopped on tab close; all stopped on workspace change/exit.
 
-------------------------------------------------------------------------
+---
 
 # 22. Large File Handling
 
@@ -540,7 +535,7 @@ Display-first.
     metadata.
 -   Images metadata still shown; huge images render scaled.
 
-------------------------------------------------------------------------
+---
 
 # 23. Performance Requirements
 
@@ -552,7 +547,7 @@ Display-first.
 -   Folder tree load for 1k+ entries without UI freeze (async invoke).
 -   Project search capped; runs off the UI thread (Rust command).
 
-------------------------------------------------------------------------
+---
 
 # 24. Security Architecture
 
@@ -569,7 +564,6 @@ Display-first.
 ## 24.1 Capability Permissions (Tauri)
 
 Keep minimal:
-
 -   `core:default`, window fullscreen query/set
 -   `dialog:allow-open` (open file/folder), `dialog:allow-save` (Save As)
 -   `opener:default` + `opener:allow-open-path` (external links /
@@ -592,7 +586,7 @@ ACL. Mutation commands (`write_text_file`, `create_file`, `create_dir`,
 `rename_path`, `delete_path`) write exactly the given path string — no
 globbing. `delete_path` moves to the OS trash (never a permanent delete).
 
-------------------------------------------------------------------------
+---
 
 # 25. Theme and Typography
 
@@ -601,7 +595,7 @@ globbing. `delete_path` moves to the OS trash (never a permanent delete).
     for prose; code/monospace surfaces use the code font size setting.
 -   Word wrap setting for text/code surfaces.
 
-------------------------------------------------------------------------
+---
 
 # 26. Copy Behavior
 
@@ -610,31 +604,31 @@ globbing. `delete_path` moves to the OS trash (never a permanent delete).
     in Markdown preview.
 -   Copy path actions in status bar / unsupported viewer.
 
-------------------------------------------------------------------------
+---
 
 # 27. Keyboard Shortcuts
 
-| Shortcut         | Action                          |
-| ---------------- | ------------------------------- |
-| `Ctrl+O`         | Open file                       |
-| `Ctrl+Shift+O`   | Open folder                     |
-| `Ctrl+S`         | Save                            |
-| `Ctrl+Shift+S`   | Save As                         |
-| `Ctrl+W`         | Close tab                       |
-| `Ctrl+Tab`       | Next tab                        |
-| `Ctrl+Shift+Tab` | Previous tab                    |
-| `Ctrl+P`         | Quick open                      |
-| `Ctrl+F`         | Find in file                    |
-| `Ctrl+H`         | Find & replace                  |
-| `Ctrl+Shift+F`   | Search in project               |
-| `Ctrl+B`         | Toggle sidebar                  |
-| `Ctrl+Shift+V`   | Toggle Markdown source/preview  |
-| `Ctrl+=/-/0`     | Font size +/-/reset             |
-| `Ctrl+,`         | Settings                        |
-| `F11`            | Fullscreen                      |
-| `Escape`         | Close overlays (find, dialogs)  |
+| Shortcut         | Action                         |
+| ---------------- | ------------------------------ |
+| `Ctrl+O`         | Open file                      |
+| `Ctrl+Shift+O`   | Open folder                    |
+| `Ctrl+S`         | Save                           |
+| `Ctrl+Shift+S`   | Save As                        |
+| `Ctrl+W`         | Close tab                      |
+| `Ctrl+Tab`       | Next tab                       |
+| `Ctrl+Shift+Tab` | Previous tab                   |
+| `Ctrl+P`         | Quick open                     |
+| `Ctrl+F`         | Find in file                   |
+| `Ctrl+H`         | Find & replace                 |
+| `Ctrl+Shift+F`   | Search in project              |
+| `Ctrl+B`         | Toggle sidebar                 |
+| `Ctrl+Shift+V`   | Toggle Markdown source/preview |
+| `Ctrl+=/-/0`     | Font size +/-/reset            |
+| `Ctrl+,`         | Settings                       |
+| `F11`            | Fullscreen                     |
+| `Escape`         | Close overlays (find, dialogs) |
 
-------------------------------------------------------------------------
+---
 
 # 28. Desktop Integration
 
@@ -650,12 +644,11 @@ globbing. `delete_path` moves to the OS trash (never a permanent delete).
     Releases latest artifacts with minisign cryptographic signatures.
 -   DPI-aware rendering (Tauri default).
 
-------------------------------------------------------------------------
+---
 
 # 29. Application State
 
 Persisted (localStorage via zustand persist):
-
 -   `settings`: theme, fontSize, lineHeight, wordWrap, showLineNumbers,
     codeTheme, autoRefresh, markdownDefaultMode, sidebarWidth. Deep-merged
     with defaults on hydrate to keep newly added settings resilient.
@@ -665,7 +658,7 @@ Persisted (localStorage via zustand persist):
 
 Not persisted: file contents, dirty drafts, tree expansion.
 
-------------------------------------------------------------------------
+---
 
 # 30. Architecture
 
@@ -691,7 +684,7 @@ src-tauri/src/
   search.rs                  — project content search
 ```
 
-------------------------------------------------------------------------
+---
 
 # 31. Error Handling
 
@@ -701,7 +694,7 @@ src-tauri/src/
 -   Watcher failures: log-only.
 -   All Rust errors surface as readable strings.
 
-------------------------------------------------------------------------
+---
 
 # 32. Encoding
 
@@ -710,7 +703,7 @@ src-tauri/src/
 -   Write: always UTF-8. Lossy-loaded file saved as UTF-8 (noted via
     encoding indicator).
 
-------------------------------------------------------------------------
+---
 
 # 33. Accessibility
 
@@ -718,7 +711,7 @@ src-tauri/src/
 -   Dialogs have titles; icon-only buttons have `title`/aria-label.
 -   Reader surfaces respect font size settings; contrast follows theme.
 
-------------------------------------------------------------------------
+---
 
 # 34. Implemented Scope
 
@@ -727,7 +720,7 @@ src-tauri/src/
 -   [x] Sidebar create file/folder, inline rename, move to trash
 -   [x] Code/CSV/image/SVG/HTML/unsupported viewers
 -   [x] Markdown render + hardening (no raw HTML, local images,
-        relative links, anchors)
+    relative links, anchors)
 -   [x] Plain-text editor for `text` + Markdown source
 -   [x] `write_text_file` Rust command + `Ctrl+S` save flow
 -   [x] Dirty indicators + unsaved-close prompts (tab close and app exit)
@@ -744,7 +737,7 @@ src-tauri/src/
 -   [x] Native drag-and-drop for files and folders
 -   [x] In-app auto-updater with signature verification and restart flow
 
-------------------------------------------------------------------------
+---
 
 # 35. Acceptance Criteria
 
@@ -763,7 +756,7 @@ src-tauri/src/
 9.  All shortcuts in §27 work.
 10. `cargo check` + `bun run build` + `bun tauri build` pass.
 
-------------------------------------------------------------------------
+---
 
 # 36. Development Rules for AI Coding Agents
 
@@ -793,7 +786,7 @@ src-tauri/src/
 10. Keep dependencies from growing: no new runtime dependency unless
     stdlib/platform truly cannot do it.
 
-------------------------------------------------------------------------
+---
 
 # 37. Definition of Done
 
@@ -803,7 +796,7 @@ src-tauri/src/
 -   `cargo check`, `bun run build`, `bun tauri build` all green.
 -   CHANGELOG updated.
 
-------------------------------------------------------------------------
+---
 
 # 38. Product Success Criteria
 

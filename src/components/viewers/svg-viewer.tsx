@@ -25,12 +25,12 @@ export function SvgViewer({ content, tabId, draft, readOnly, onCursor }: SvgView
   };
 
   return (
-    <div className="flex h-full flex-col bg-background">
-      <div className="flex items-center gap-1 border-border border-b px-3 py-1.5">
+    <div className="bg-background flex h-full flex-col">
+      <div className="border-border flex items-center gap-1 border-b px-3 py-1.5">
         <button
           onClick={() => setMode("preview")}
           className={cn(
-            "inline-flex h-7 items-center gap-1.5 rounded-md px-3 font-medium text-xs transition-colors",
+            "inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors",
             mode === "preview"
               ? "bg-accent text-foreground"
               : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
@@ -42,7 +42,7 @@ export function SvgViewer({ content, tabId, draft, readOnly, onCursor }: SvgView
         <button
           onClick={() => setMode("source")}
           className={cn(
-            "inline-flex h-7 items-center gap-1.5 rounded-md px-3 font-medium text-xs transition-colors",
+            "inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors",
             mode === "source"
               ? "bg-accent text-foreground"
               : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",

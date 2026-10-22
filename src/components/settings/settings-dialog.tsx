@@ -54,7 +54,7 @@ const MARKDOWN_MODE_LABELS: Record<"source" | "preview", string> = {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <p className="pt-4 pb-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+    <p className="text-muted-foreground pt-4 pb-1 text-xs font-medium tracking-wide uppercase">
       {children}
     </p>
   );
@@ -74,11 +74,11 @@ function SettingRow({
   return (
     <div className="flex items-center justify-between gap-4 py-3">
       <div className="flex items-center gap-3">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-muted/60">
-          <Icon className="size-4 text-muted-foreground" />
+        <div className="bg-muted/60 flex size-8 items-center justify-center rounded-lg">
+          <Icon className="text-muted-foreground size-4" />
         </div>
         <div>
-          <p className="font-medium text-sm">{label}</p>
+          <p className="text-sm font-medium">{label}</p>
           {hint && <p className="text-muted-foreground text-xs">{hint}</p>}
         </div>
       </div>
@@ -98,12 +98,12 @@ export function SettingsDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent
         showCloseButton
-        className="w-140 max-w-[92vw] gap-0 overflow-hidden rounded-xl border-border p-0 sm:max-w-[92vw]"
+        className="border-border w-140 max-w-[92vw] gap-0 overflow-hidden rounded-xl p-0 sm:max-w-[92vw]"
       >
         <DialogTitle className="sr-only">Settings</DialogTitle>
-        <div className="flex items-center gap-2 border-border border-b px-5 py-4">
-          <Settings className="size-5 text-muted-foreground" />
-          <h2 className="font-semibold text-base">Settings</h2>
+        <div className="border-border flex items-center gap-2 border-b px-5 py-4">
+          <Settings className="text-muted-foreground size-5" />
+          <h2 className="text-base font-semibold">Settings</h2>
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto px-5 pb-4">
@@ -199,7 +199,7 @@ export function SettingsDialog() {
                 itemToStringLabel={(item) => item?.label ?? ""}
                 itemToStringValue={(item) => item?.value ?? ""}
               >
-                <ComboboxTrigger className="flex h-8 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-xs hover:bg-accent/50">
+                <ComboboxTrigger className="border-input bg-background hover:bg-accent/50 flex h-8 w-full items-center justify-between rounded-md border px-3 py-1.5 text-xs shadow-xs">
                   <ComboboxValue placeholder="Select theme...">
                     {(item) => item?.label}
                   </ComboboxValue>
@@ -228,12 +228,12 @@ export function SettingsDialog() {
           <UpdateCheckerRow />
         </div>
 
-        <div className="flex items-center justify-between border-border border-t bg-muted/20 px-5 py-3">
+        <div className="border-border bg-muted/20 flex items-center justify-between border-t px-5 py-3">
           <Button
             variant="ghost"
             size="sm"
             onClick={resetSettings}
-            className="text-muted-foreground text-xs hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground text-xs"
           >
             <RotateCcw className="mr-1.5 size-3.5" />
             Reset to defaults
@@ -289,11 +289,11 @@ function UpdateCheckerRow() {
     <div className="flex flex-col gap-2 py-3">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-muted/60">
-            <Sparkles className="size-4 text-muted-foreground" />
+          <div className="bg-muted/60 flex size-8 items-center justify-center rounded-lg">
+            <Sparkles className="text-muted-foreground size-4" />
           </div>
           <div>
-            <p className="font-medium text-sm">LightRead v{__APP_VERSION__}</p>
+            <p className="text-sm font-medium">LightRead v{__APP_VERSION__}</p>
             <p className="text-muted-foreground text-xs">
               {status === "checking" && "Checking for new releases..."}
               {status === "latest" && "You're on the latest version"}

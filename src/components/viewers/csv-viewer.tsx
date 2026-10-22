@@ -32,13 +32,13 @@ export function CsvViewer({ content, tabId, draft, fontSize, readOnly, onCursor 
   const visibleBody = body.slice(0, rowLimit);
 
   return (
-    <div className="flex h-full flex-col bg-background">
+    <div className="bg-background flex h-full flex-col">
       {tabId && !readOnly && (
-        <div className="flex items-center gap-1 border-border border-b px-3 py-1.5">
+        <div className="border-border flex items-center gap-1 border-b px-3 py-1.5">
           <button
             onClick={() => setMode("table")}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium text-xs transition-colors",
+              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
               mode === "table"
                 ? "bg-accent text-accent-foreground"
                 : "text-muted-foreground hover:text-foreground",
@@ -50,7 +50,7 @@ export function CsvViewer({ content, tabId, draft, fontSize, readOnly, onCursor 
           <button
             onClick={() => setMode("source")}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium text-xs transition-colors",
+              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
               mode === "source"
                 ? "bg-accent text-accent-foreground"
                 : "text-muted-foreground hover:text-foreground",
@@ -67,12 +67,12 @@ export function CsvViewer({ content, tabId, draft, fontSize, readOnly, onCursor 
         <div className="h-full overflow-auto p-4" data-viewer-content>
           <table className="w-max border-collapse text-left" style={{ fontSize }}>
             {header && (
-              <thead className="sticky top-0 bg-background shadow-[0_1px_0_0_var(--border)]">
+              <thead className="bg-background sticky top-0 shadow-[0_1px_0_0_var(--border)]">
                 <tr>
                   {header.map((cell, i) => (
                     <th
                       key={i}
-                      className="whitespace-nowrap border-border border-b px-3 py-1.5 font-semibold"
+                      className="border-border border-b px-3 py-1.5 font-semibold whitespace-nowrap"
                     >
                       {cell || "\u00A0"}
                     </th>
@@ -84,7 +84,7 @@ export function CsvViewer({ content, tabId, draft, fontSize, readOnly, onCursor 
               {visibleBody.map((r, ri) => (
                 <tr key={ri} className={cn(ri % 2 === 1 && "bg-muted/40")}>
                   {r.map((cell, ci) => (
-                    <td key={ci} className="whitespace-nowrap border-border px-3 py-1.5">
+                    <td key={ci} className="border-border px-3 py-1.5 whitespace-nowrap">
                       {cell || "\u00A0"}
                     </td>
                   ))}
@@ -95,7 +95,7 @@ export function CsvViewer({ content, tabId, draft, fontSize, readOnly, onCursor 
           {body.length > rowLimit && (
             <button
               onClick={() => setRowLimit((l) => l + 5000)}
-              className="mx-auto mt-4 flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-muted-foreground text-xs transition-colors hover:bg-accent hover:text-foreground"
+              className="border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground mx-auto mt-4 flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs transition-colors"
             >
               <ChevronDown className="size-3.5" />
               Show more rows ({(body.length - rowLimit).toLocaleString()} remaining)

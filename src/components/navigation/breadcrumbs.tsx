@@ -47,13 +47,13 @@ export function Breadcrumbs() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 shrink-0 px-1.5 text-muted-foreground text-xs"
+            className="text-muted-foreground h-6 shrink-0 px-1.5 text-xs"
             onClick={() => handleCrumbClick(rootPath, false)}
           >
             {rootName}
           </Button>
           {crumbs.length > 0 && (
-            <ChevronRightIcon className="size-3 shrink-0 text-muted-foreground" />
+            <ChevronRightIcon className="text-muted-foreground size-3 shrink-0" />
           )}
         </>
       )}
@@ -64,14 +64,14 @@ export function Breadcrumbs() {
             size="sm"
             className={cn(
               "h-6 min-w-0 shrink truncate px-1.5 text-xs",
-              crumb.isLast ? "cursor-default font-medium text-foreground" : "text-muted-foreground",
+              crumb.isLast ? "text-foreground cursor-default font-medium" : "text-muted-foreground",
             )}
             onClick={() => handleCrumbClick(crumb.path, crumb.isLast)}
             title={crumb.label}
           >
             <span className="truncate">{crumb.label}</span>
           </Button>
-          {!crumb.isLast && <ChevronRightIcon className="size-3 shrink-0 text-muted-foreground" />}
+          {!crumb.isLast && <ChevronRightIcon className="text-muted-foreground size-3 shrink-0" />}
         </div>
       ))}
     </nav>

@@ -34,14 +34,14 @@ function UnsavedChangesDialog() {
 
   return (
     <Dialog open onOpenChange={(o) => !o && resolvePendingClose("cancel")}>
-      <DialogContent showCloseButton={false} className="max-w-sm rounded-xl border-border p-0">
-        <DialogTitle className="px-5 pt-5 font-semibold text-base">Unsaved changes</DialogTitle>
-        <DialogDescription className="px-5 pt-1.5 pb-2 text-muted-foreground text-sm">
+      <DialogContent showCloseButton={false} className="border-border max-w-sm rounded-xl p-0">
+        <DialogTitle className="px-5 pt-5 text-base font-semibold">Unsaved changes</DialogTitle>
+        <DialogDescription className="text-muted-foreground px-5 pt-1.5 pb-2 text-sm">
           {names.length === 1
             ? `Save changes to ${names[0]} before closing?`
             : `Save changes to ${names.length} files before closing?`}
         </DialogDescription>
-        <DialogFooter className="flex-row gap-2 border-border border-t px-5 py-4">
+        <DialogFooter className="border-border flex-row gap-2 border-t px-5 py-4">
           <Button variant="outline" size="sm" onClick={() => resolvePendingClose("cancel")}>
             Cancel
           </Button>
@@ -107,7 +107,7 @@ function SidebarPane({
         </>
       )}
       <ResizablePanel>
-        <div className="flex h-full flex-col bg-background">
+        <div className="bg-background flex h-full flex-col">
           <Toolbar />
           <TabsAndMain />
         </div>

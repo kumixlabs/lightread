@@ -104,37 +104,37 @@ export function ImageViewer({ file }: ImageViewerProps) {
   };
 
   return (
-    <div className="flex h-full flex-col bg-background">
-      <div className="flex items-center justify-between gap-2 border-border border-b px-3 py-1.5">
+    <div className="bg-background flex h-full flex-col">
+      <div className="border-border flex items-center justify-between gap-2 border-b px-3 py-1.5">
         <div className="flex items-center gap-1">
           <button
             onClick={zoomOut}
-            className="inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground inline-flex h-7 w-7 items-center justify-center rounded transition-colors"
             title="Zoom out"
           >
             <ZoomOut className="size-4" />
           </button>
-          <span className="min-w-12 text-center text-muted-foreground text-xs tabular-nums">
+          <span className="text-muted-foreground min-w-12 text-center text-xs tabular-nums">
             {Math.round(zoom * 100)}%
           </span>
           <button
             onClick={zoomIn}
-            className="inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground inline-flex h-7 w-7 items-center justify-center rounded transition-colors"
             title="Zoom in"
           >
             <ZoomIn className="size-4" />
           </button>
-          <div className="mx-1 h-4 w-px bg-border" />
+          <div className="bg-border mx-1 h-4 w-px" />
           <button
             onClick={actualSize}
-            className="inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground inline-flex h-7 w-7 items-center justify-center rounded transition-colors"
             title="Actual size"
           >
             <Minimize className="size-4" />
           </button>
           <button
             onClick={reset}
-            className="inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground inline-flex h-7 w-7 items-center justify-center rounded transition-colors"
             title="Fit to window"
           >
             <Maximize className="size-4" />
@@ -160,7 +160,7 @@ export function ImageViewer({ file }: ImageViewerProps) {
       >
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+            <div className="border-muted-foreground h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         )}
         {error ? (

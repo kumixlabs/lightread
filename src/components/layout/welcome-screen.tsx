@@ -36,9 +36,9 @@ export function WelcomeScreen() {
   const hasRecents = recentDirs.length > 0 || recentFiles.length > 0;
 
   return (
-    <div className="flex h-full flex-col items-center justify-center overflow-auto bg-linear-to-b from-background to-muted/30 p-8">
-      <h1 className="font-bold text-4xl tracking-tight">LightRead</h1>
-      <p className="mt-1.5 text-base text-muted-foreground">Read. Edit. Preview. Nothing Else.</p>
+    <div className="from-background to-muted/30 flex h-full flex-col items-center justify-center overflow-auto bg-linear-to-b p-8">
+      <h1 className="text-4xl font-bold tracking-tight">LightRead</h1>
+      <p className="text-muted-foreground mt-1.5 text-base">Read. Edit. Preview. Nothing Else.</p>
 
       <div className="mt-8 flex gap-2.5">
         <Button size="lg" className="h-10 px-5" onClick={() => lr()?.openFile()}>
@@ -61,7 +61,7 @@ export function WelcomeScreen() {
           <>
             {recentDirs.length > 0 && (
               <div>
-                <h3 className="mb-2.5 flex items-center gap-2 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+                <h3 className="text-muted-foreground mb-2.5 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase">
                   <Folder className="size-3.5" />
                   Recent Projects
                 </h3>
@@ -69,7 +69,7 @@ export function WelcomeScreen() {
                   {recentDirs.map((r) => (
                     <div
                       key={r.path}
-                      className="group flex w-full items-center justify-between rounded-md pr-1 transition-colors hover:bg-accent"
+                      className="group hover:bg-accent flex w-full items-center justify-between rounded-md pr-1 transition-colors"
                     >
                       <button
                         type="button"
@@ -77,7 +77,7 @@ export function WelcomeScreen() {
                         title={r.path}
                         className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-1.5 text-[13px]"
                       >
-                        <Folder className="size-3.5 shrink-0 text-muted-foreground" />
+                        <Folder className="text-muted-foreground size-3.5 shrink-0" />
                         <span className="truncate text-left">{r.name}</span>
                       </button>
                       <button
@@ -87,7 +87,7 @@ export function WelcomeScreen() {
                           e.stopPropagation();
                           removeRecent(r.path);
                         }}
-                        className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-background/80 hover:text-foreground group-hover:opacity-100"
+                        className="text-muted-foreground hover:bg-background/80 hover:text-foreground rounded p-1 opacity-0 transition-opacity group-hover:opacity-100"
                       >
                         <X className="size-3 shrink-0" />
                       </button>
@@ -98,7 +98,7 @@ export function WelcomeScreen() {
             )}
             {recentFiles.length > 0 && (
               <div>
-                <h3 className="mb-2.5 flex items-center gap-2 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+                <h3 className="text-muted-foreground mb-2.5 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase">
                   <FileText className="size-3.5" />
                   Recent Files
                 </h3>
@@ -106,7 +106,7 @@ export function WelcomeScreen() {
                   {recentFiles.map((r) => (
                     <div
                       key={r.path}
-                      className="group flex w-full items-center justify-between rounded-md pr-1 transition-colors hover:bg-accent"
+                      className="group hover:bg-accent flex w-full items-center justify-between rounded-md pr-1 transition-colors"
                     >
                       <button
                         type="button"
@@ -114,7 +114,7 @@ export function WelcomeScreen() {
                         title={r.path}
                         className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-1.5 text-[13px]"
                       >
-                        <FileText className="size-3.5 shrink-0 text-muted-foreground" />
+                        <FileText className="text-muted-foreground size-3.5 shrink-0" />
                         <span className="truncate text-left">{r.name}</span>
                       </button>
                       <button
@@ -124,7 +124,7 @@ export function WelcomeScreen() {
                           e.stopPropagation();
                           removeRecent(r.path);
                         }}
-                        className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-background/80 hover:text-foreground group-hover:opacity-100"
+                        className="text-muted-foreground hover:bg-background/80 hover:text-foreground rounded p-1 opacity-0 transition-opacity group-hover:opacity-100"
                       >
                         <X className="size-3 shrink-0" />
                       </button>
@@ -137,7 +137,7 @@ export function WelcomeScreen() {
         )}
 
         <div className={hasRecents ? "" : "md:col-span-3"}>
-          <h3 className="mb-2.5 flex items-center gap-2 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+          <h3 className="text-muted-foreground mb-2.5 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase">
             <Clock className="size-3.5" />
             Shortcuts
           </h3>
@@ -145,7 +145,7 @@ export function WelcomeScreen() {
             {SHORTCUTS.map((s) => (
               <div key={s.keys} className="flex items-center justify-between text-[13px]">
                 <span className="text-muted-foreground">{s.label}</span>
-                <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                <kbd className="border-border bg-muted text-muted-foreground rounded border px-1.5 py-0.5 font-mono text-[10px]">
                   {s.keys}
                 </kbd>
               </div>

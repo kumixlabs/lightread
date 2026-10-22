@@ -132,13 +132,13 @@ export function RecentDialog() {
           <span className={cn("truncate font-medium", isSelected && "text-primary")}>
             {item.name}
           </span>
-          <span className="truncate text-muted-foreground text-xs">{item.path}</span>
+          <span className="text-muted-foreground truncate text-xs">{item.path}</span>
         </button>
         <button
           type="button"
           title="Remove from recents"
           onClick={(e) => handleRemove(e, item.path)}
-          className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-background/80 hover:text-foreground group-hover:opacity-100"
+          className="text-muted-foreground hover:bg-background/80 hover:text-foreground rounded p-1 opacity-0 transition-opacity group-hover:opacity-100"
         >
           <X className="size-3.5" />
         </button>
@@ -148,9 +148,9 @@ export function RecentDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="gap-0 overflow-hidden rounded-xl border-border p-0 shadow-2xl sm:max-w-2xl [&>button]:hidden">
-        <div className="flex items-center gap-2.5 border-border border-b px-4 py-3">
-          <Search className="size-4 text-muted-foreground" />
+      <DialogContent className="border-border gap-0 overflow-hidden rounded-xl p-0 shadow-2xl sm:max-w-2xl [&>button]:hidden">
+        <div className="border-border flex items-center gap-2.5 border-b px-4 py-3">
+          <Search className="text-muted-foreground size-4" />
           <Input
             ref={inputRef}
             value={query}
@@ -162,14 +162,14 @@ export function RecentDialog() {
         </div>
         <div className="max-h-120 overflow-y-auto p-2">
           {allItems.length === 0 ? (
-            <div className="px-4 py-8 text-center text-muted-foreground text-sm">
+            <div className="text-muted-foreground px-4 py-8 text-center text-sm">
               No matching recent projects or files
             </div>
           ) : (
             <>
               {dirs.length > 0 && (
                 <div className="space-y-0.5">
-                  <div className="flex items-center gap-1.5 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+                  <div className="text-muted-foreground flex items-center gap-1.5 px-3 py-1 text-[11px] font-medium tracking-wider uppercase">
                     <Folder className="size-3" />
                     <span>Projects & Folders</span>
                   </div>
@@ -178,12 +178,12 @@ export function RecentDialog() {
               )}
 
               {dirs.length > 0 && files.length > 0 && (
-                <div className="my-2 border-border border-t" />
+                <div className="border-border my-2 border-t" />
               )}
 
               {files.length > 0 && (
                 <div className="space-y-0.5">
-                  <div className="flex items-center gap-1.5 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+                  <div className="text-muted-foreground flex items-center gap-1.5 px-3 py-1 text-[11px] font-medium tracking-wider uppercase">
                     <FileText className="size-3" />
                     <span>Files</span>
                   </div>

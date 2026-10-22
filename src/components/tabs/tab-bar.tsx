@@ -96,7 +96,7 @@ export function TabBar() {
     <div
       role="tablist"
       aria-label="Open files"
-      className="flex h-9 shrink-0 items-stretch border-border border-b bg-muted/40"
+      className="border-border bg-muted/40 flex h-9 shrink-0 items-stretch border-b"
     >
       <div ref={scrollAreaRef} className="min-w-0 flex-1">
         <ScrollArea className="h-9">
@@ -142,13 +142,13 @@ export function TabBar() {
                         }
                       }}
                       className={cn(
-                        "group relative flex h-9 min-w-0 shrink-0 cursor-pointer items-center gap-2 border-border border-r px-3 text-[13px] transition-all",
+                        "group border-border relative flex h-9 min-w-0 shrink-0 cursor-pointer items-center gap-2 border-r px-3 text-[13px] transition-all",
                         isActive
                           ? "bg-background text-foreground"
                           : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                       )}
                     >
-                      {isActive && <span className="absolute inset-x-0 top-0 h-0.5 bg-primary" />}
+                      {isActive && <span className="bg-primary absolute inset-x-0 top-0 h-0.5" />}
                       <Icon
                         className={cn(
                           "size-3.5 shrink-0",
@@ -158,7 +158,7 @@ export function TabBar() {
                       <span className="truncate">{tab.file.name}</span>
                       {isDirty && (
                         <span
-                          className="ml-1 inline-block size-1.5 shrink-0 rounded-full bg-primary"
+                          className="bg-primary ml-1 inline-block size-1.5 shrink-0 rounded-full"
                           aria-label="Unsaved changes"
                         />
                       )}
@@ -170,8 +170,8 @@ export function TabBar() {
                         className={cn(
                           "ml-auto inline-flex size-4 shrink-0 items-center justify-center rounded transition-all",
                           isActive
-                            ? "opacity-60 hover:bg-accent hover:opacity-100"
-                            : "opacity-0 hover:bg-accent group-hover:opacity-60 group-hover:hover:opacity-100",
+                            ? "hover:bg-accent opacity-60 hover:opacity-100"
+                            : "hover:bg-accent opacity-0 group-hover:opacity-60 group-hover:hover:opacity-100",
                         )}
                         aria-label="Close tab"
                       >
@@ -205,7 +205,7 @@ export function TabBar() {
           render={
             <button
               onClick={() => window.__lightread?.openFile()}
-              className="flex w-8 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+              className="text-muted-foreground hover:bg-background hover:text-foreground flex w-8 shrink-0 items-center justify-center transition-colors"
               aria-label="Open file (Ctrl+O)"
             />
           }

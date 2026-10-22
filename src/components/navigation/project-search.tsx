@@ -86,11 +86,11 @@ export function ProjectSearch() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent
         showCloseButton={false}
-        className="gap-0 overflow-hidden rounded-xl border-border p-0 sm:max-w-3xl"
+        className="border-border gap-0 overflow-hidden rounded-xl p-0 sm:max-w-3xl"
       >
         <DialogTitle className="sr-only">Project Search</DialogTitle>
-        <div className="flex items-center gap-2 border-border border-b px-4 py-3">
-          <Search className="size-4 text-muted-foreground" />
+        <div className="border-border flex items-center gap-2 border-b px-4 py-3">
+          <Search className="text-muted-foreground size-4" />
           <Input
             ref={inputRef}
             value={query}
@@ -119,7 +119,7 @@ export function ProjectSearch() {
           </Button>
         </div>
 
-        <div className="flex items-center justify-between border-border border-b px-4 py-2 text-muted-foreground text-xs">
+        <div className="border-border text-muted-foreground flex items-center justify-between border-b px-4 py-2 text-xs">
           <span>
             {loading
               ? "Searching..."
@@ -138,9 +138,9 @@ export function ProjectSearch() {
             ) : (
               Array.from(grouped.entries()).map(([filePath, matches]) => (
                 <div key={filePath}>
-                  <div className="flex items-center gap-2 border-border border-b bg-muted/30 px-4 py-1.5">
-                    <FileText className="size-3 text-muted-foreground" />
-                    <span className="font-mono text-muted-foreground text-xs">
+                  <div className="border-border bg-muted/30 flex items-center gap-2 border-b px-4 py-1.5">
+                    <FileText className="text-muted-foreground size-3" />
+                    <span className="text-muted-foreground font-mono text-xs">
                       {basename(filePath)}
                     </span>
                     <span className="text-muted-foreground/50 text-xs">
@@ -151,9 +151,9 @@ export function ProjectSearch() {
                     <button
                       key={`${match.line}-${idx}`}
                       onClick={() => handleClickResult(match.path, match.line)}
-                      className="flex w-full items-baseline gap-3 px-4 py-1.5 text-left transition-colors hover:bg-accent"
+                      className="hover:bg-accent flex w-full items-baseline gap-3 px-4 py-1.5 text-left transition-colors"
                     >
-                      <span className="min-w-10 text-right font-mono text-muted-foreground/50 text-xs">
+                      <span className="text-muted-foreground/50 min-w-10 text-right font-mono text-xs">
                         {match.line}
                       </span>
                       <span className="truncate font-mono text-xs">{match.text.trim()}</span>
