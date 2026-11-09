@@ -15,6 +15,7 @@ documents without launching a full code editor.
 
 LightRead is a lightweight desktop document app — think **Windows
 Notepad, but better**:
+
 -   Opens any common text-based file instantly.
 -   Edits plain text like Notepad (simple, no distraction).
 -   Renders Markdown as a formatted document, with a toggle between
@@ -45,6 +46,7 @@ IntelliSense, no language servers, no debugging, no terminal, no Git.
 # 2. Problem Statement
 
 Typical situations:
+
 -   Read and fix a typo in a `README.md`.
 -   Take quick notes in a `.txt` file.
 -   Skim a large `.log` file.
@@ -92,6 +94,7 @@ LightRead reduces this to:
 # 4. Non-Goals
 
 Explicitly outside the scope:
+
 -   WYSIWYG Markdown editing.
 -   Rich-text editing of any kind.
 -   Autocomplete, IntelliSense, language servers.
@@ -169,6 +172,7 @@ read-only: LightRead is not where software gets written.
 ## 7.2 Simple Editing
 
 Editing must feel like Notepad:
+
 -   A single plain-text editing surface per file.
 -   No formatting toolbar, no modes, no panels.
 -   `Ctrl+S` saves. That is the whole editing model.
@@ -307,6 +311,7 @@ A single registry decides, per filename, the `viewerType`:
 | `unsupported` | Message + open-with-default-app action    | No       |
 
 Detection order:
+
 1.  Exact-name map (Dockerfile, Makefile, dotfiles).
 2.  Extension map.
 3.  Fallbacks: known image ext → `image` viewer; known audio/video ext →
@@ -564,6 +569,7 @@ Display-first.
 ## 24.1 Capability Permissions (Tauri)
 
 Keep minimal:
+
 -   `core:default`, window fullscreen query/set
 -   `dialog:allow-open` (open file/folder), `dialog:allow-save` (Save As)
 -   `opener:default` + `opener:allow-open-path` (external links /
@@ -649,6 +655,7 @@ globbing. `delete_path` moves to the OS trash (never a permanent delete).
 # 29. Application State
 
 Persisted (localStorage via zustand persist):
+
 -   `settings`: theme, fontSize, lineHeight, wordWrap, showLineNumbers,
     codeTheme, autoRefresh, markdownDefaultMode, sidebarWidth. Deep-merged
     with defaults on hydrate to keep newly added settings resilient.

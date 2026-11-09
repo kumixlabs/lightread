@@ -20,5 +20,6 @@ A clear and concise description of any alternative solutions or features you've 
 Add any other context, code examples, or screenshots about the feature request here.
 
 **Scope check** (LightRead is a lightweight reader/editor — not an IDE):
+
 - [ ] Fits "Notepad + Markdown preview" spirit
 - [ ] Does not add a terminal, plugin marketplace, or rich-text editor
