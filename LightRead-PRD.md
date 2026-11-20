@@ -727,7 +727,7 @@ src-tauri/src/
 -   [x] Sidebar create file/folder, inline rename, move to trash
 -   [x] Code/CSV/image/SVG/HTML/unsupported viewers
 -   [x] Markdown render + hardening (no raw HTML, local images,
-    relative links, anchors)
+        relative links, anchors)
 -   [x] Plain-text editor for `text` + Markdown source
 -   [x] `write_text_file` Rust command + `Ctrl+S` save flow
 -   [x] Dirty indicators + unsaved-close prompts (tab close and app exit)
