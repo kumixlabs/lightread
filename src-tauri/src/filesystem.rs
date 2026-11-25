@@ -155,11 +155,13 @@ fn read_directory_inner(
 
     for entry in all_entries {
         let name = entry.file_name().to_string_lossy().into_owned();
-        if should_ignore(&name) {
-            continue;
-        }
         let entry_path = entry.path();
         let is_dir = entry.file_type().map(|t| t.is_dir()).unwrap_or(false);
+        // The ignore list is directory names; plain files named "dist"/"target"
+        // stay visible so the tree never hides real files.
+        if is_dir && should_ignore(&name) {
+            continue;
+        }
         let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
 
         let children = if is_dir && depth < max_depth {

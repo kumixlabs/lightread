@@ -26,7 +26,7 @@
 - **Rust Backend (`src-tauri/src/`)**:
   - `filesystem.rs`: UTF-8 and lossy text read/write, directory enumeration, metadata, create, rename, trash deletion (`delete_path` via OS trash), dynamic asset scoping, app config read/write.
   - `window_state.rs`: Window geometry tracking, auto-save on resize/move (debounced), flush on close/exit, multi-monitor bounds validation, startup restore, and reset.
-  - `watchers.rs`: Recursive workspace filesystem watcher and single-file watcher using `notify-debouncer-full`.
+  - `watchers.rs`: Recursive workspace filesystem watcher and single-file watcher using `notify-debouncer-mini`.
   - `search.rs`: Non-blocking project search (`tauri::async_runtime::spawn_blocking`) with symlink cycle guard (`HashSet<PathBuf>`).
   - `lib.rs`: Tauri builder, plugin registrations, invoke handler setup, single-instance enforcement, and window lifecycle hooks.
 - **Frontend Architecture (`src/`)**:

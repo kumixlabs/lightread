@@ -2,6 +2,20 @@
 
 All notable changes to LightRead will be documented in this file.
 
+## 0.2.5 - 25-11-2026
+
+### Fixed
+
+- **No-lossy-save hard invariant**: `Save` now refuses to write back truncated or lossy (non-UTF-8) content at the store level, and markdown / HTML / SVG / CSV viewers set read-only for lossy files like text/code already did — preventing silent corruption of original bytes. `Save As` remains the escape hatch.
+- **Files named like ignored directories**: the ignore list (`dist`, `target`, …) now applies only to directories, so plain files with those names are no longer hidden from the file tree.
+- **Dotfiles now searchable**: project search matches the file tree — dotfiles (`.env`, `.gitignore`, `.github`, …) are searchable, while ignored directories stay skipped.
+- **Lingering scrollbar fix**: file tree, tab bar, and project search scrollbars now disappear when content shrinks (folders collapsed, tabs closed, results filtered) — scroll areas observe their content via a ResizeObserver, not just the viewport.
+- **Escape/F11 safe in browser dev**: fullscreen shortcuts only call Tauri window APIs inside a real Tauri webview; Escape still closes dialogs when running `vite dev` in a plain browser.
+
+### Changed
+
+- **Docs & deps cleanup**: AGENTS.md watcher docs corrected to `notify-debouncer-mini`; unused direct `notify` dependency removed from Cargo.toml.
+
 ## 0.2.4 - 29-09-2026
 
 ### Added

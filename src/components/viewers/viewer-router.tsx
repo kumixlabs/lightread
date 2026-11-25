@@ -191,7 +191,7 @@ export function ViewerRouter() {
             content={file.content}
             tabId={tab.id}
             draft={tab.draft}
-            readOnly={!!file.truncated}
+            readOnly={!!file.truncated || !!file.lossy}
             onCursor={tab.id === activeTabId ? setCursor : undefined}
           />
         );
@@ -201,7 +201,7 @@ export function ViewerRouter() {
             content={file.content}
             tabId={tab.id}
             draft={tab.draft}
-            readOnly={!!file.truncated}
+            readOnly={!!file.truncated || !!file.lossy}
             onCursor={tab.id === activeTabId ? setCursor : undefined}
           />
         );
@@ -212,7 +212,7 @@ export function ViewerRouter() {
             tabId={tab.id}
             draft={tab.draft}
             fontSize={settings.fontSize}
-            readOnly={!!file.truncated}
+            readOnly={!!file.truncated || !!file.lossy}
             onCursor={tab.id === activeTabId ? setCursor : undefined}
           />
         );

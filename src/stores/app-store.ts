@@ -663,6 +663,16 @@ export const useStore = create<AppState>()(
       saveTab: async (tabId: string) => {
         const tab = get().tabs.find((t) => t.id === tabId);
         if (!tab || !isDirty(tab)) return true;
+        // Hard invariant (No File Loss): truncated/lossy content must never be
+        // written back — the original bytes would be destroyed. Use Save As.
+        if (tab.file.truncated || tab.file.lossy) {
+          set({
+            fileError: `Cannot save ${tab.file.name}: file is ${
+              tab.file.truncated ? "truncated" : "not valid UTF-8"
+            }. Original bytes stay untouched.`,
+          });
+          return false;
+        }
         try {
           stampSelfWrite(tab.file.path);
           await writeTextFile(tab.file.path, tab.draft!);

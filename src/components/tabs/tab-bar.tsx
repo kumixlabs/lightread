@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
+import { ScrollArea as BaseScrollArea } from "@base-ui/react/scroll-area";
 import {
   FileImage,
   FileText,
@@ -100,7 +101,10 @@ export function TabBar() {
     >
       <div ref={scrollAreaRef} className="min-w-0 flex-1">
         <ScrollArea className="h-9">
-          <div className="flex items-stretch">
+          {/* Content carries a ResizeObserver: closing tabs shrinks content
+              without viewport resize/scroll events; without this the
+              horizontal scrollbar lingers after tabs close. */}
+          <BaseScrollArea.Content className="flex items-stretch">
             {tabs.map((tab, index) => {
               const Icon = getFileIcon(tab.file);
               const isActive = tab.id === activeTabId;
@@ -196,7 +200,7 @@ export function TabBar() {
                 </ContextMenu>
               );
             })}
-          </div>
+          </BaseScrollArea.Content>
           <ScrollBar orientation="horizontal" className="h-1.5" />
         </ScrollArea>
       </div>

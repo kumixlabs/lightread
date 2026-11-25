@@ -228,7 +228,7 @@ export function MarkdownViewer({ file, tabId, draft, previewMode }: MarkdownView
               tabId={tabId}
               content={content}
               onCursor={tabId === activeTabId ? setCursor : undefined}
-              readOnly={file.truncated}
+              readOnly={file.truncated || file.lossy}
             />
           )}
         </div>

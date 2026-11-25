@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ScrollArea as BaseScrollArea } from "@base-ui/react/scroll-area";
 import { CaseSensitive, FileText, Search, X } from "lucide-react";
 
 import { Button } from "@kumix/ui/ui/button";
@@ -130,7 +131,14 @@ export function ProjectSearch() {
         </div>
 
         <ScrollArea className="max-h-100">
-          <div className="py-1">
+          {/* Content carries a ResizeObserver: shrinking results (new query)
+              must re-evaluate scrollbar visibility without a scroll event. */}
+          <BaseScrollArea.Content
+            className="py-1"
+            // Neutralize Base UI's default min-width:fit-content — match
+            // lines truncate; without this they'd overflow horizontally.
+            style={{ minWidth: 0 }}
+          >
             {grouped.size === 0 && !loading && searched ? (
               <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
                 <p className="text-muted-foreground text-sm">No results found</p>
@@ -162,7 +170,7 @@ export function ProjectSearch() {
                 </div>
               ))
             )}
-          </div>
+          </BaseScrollArea.Content>
         </ScrollArea>
       </DialogContent>
     </Dialog>

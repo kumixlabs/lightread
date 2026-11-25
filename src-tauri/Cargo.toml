@@ -1,6 +1,6 @@
 [package]
 name = "lightread"
-version = "0.2.4"
+version = "0.2.5"
 description = "LightRead - Read. Edit. Preview. Nothing Else."
 authors = ["Kumix Labs"]
 license = "MIT"
@@ -30,7 +30,6 @@ tauri-plugin-process = "2"
 tauri = { version = "2", features = ["protocol-asset"] }
 serde_json = "1"
 serde = { version = "1", features = ["derive"] }
-notify = "8"
 notify-debouncer-mini = "0.5"
 trash = "5"
 

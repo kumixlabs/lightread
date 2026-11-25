@@ -1,11 +1,36 @@
 import { useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
-import { pickFile, pickFolder } from "@/lib/tauri-api";
+import { isTauri, pickFile, pickFolder } from "@/lib/tauri-api";
 import { DEFAULT_SETTINGS, useStore } from "@/stores/app-store";
 
 export function useKeyboardShortcuts() {
   useEffect(() => {
+    // Escape closes the topmost dialog (browser dev included — no Tauri APIs).
+    const closeTopDialog = () => {
+      const s = useStore.getState();
+      if (s.settingsOpen) {
+        s.setSettingsOpen(false);
+        return;
+      }
+      if (s.pendingClose) return; // dialog handles its own keys
+      if (s.projectSearchOpen) {
+        s.setProjectSearchOpen(false);
+        return;
+      }
+      if (s.quickOpenOpen) {
+        s.setQuickOpenOpen(false);
+        return;
+      }
+      if (s.recentOpen) {
+        s.setRecentOpen(false);
+        return;
+      }
+      if (s.findOpen) {
+        s.setFindOpen(false);
+      }
+    };
+
     const handler = (e: KeyboardEvent) => {
       const s = useStore.getState();
       const ctrl = e.ctrlKey || e.metaKey;
@@ -108,6 +133,7 @@ export function useKeyboardShortcuts() {
         return;
       }
       if (e.key === "F11") {
+        if (!isTauri()) return; // browser dev: F11 = native browser fullscreen
         e.preventDefault();
         const win = getCurrentWindow();
         win.isFullscreen().then((fs) => win.setFullscreen(!fs));
@@ -116,33 +142,15 @@ export function useKeyboardShortcuts() {
       if (e.key === "Escape") {
         // Fullscreen first: Esc returns to windowed and consumes the key —
         // dialogs must not also close underneath the un-fullscreen animation.
-        const win = getCurrentWindow();
-        win.isFullscreen().then((fs) => {
-          if (fs) {
-            win.setFullscreen(false);
-            return;
-          }
-          if (s.settingsOpen) {
-            s.setSettingsOpen(false);
-            return;
-          }
-          if (s.pendingClose) return; // dialog handles its own keys
-          if (s.projectSearchOpen) {
-            s.setProjectSearchOpen(false);
-            return;
-          }
-          if (s.quickOpenOpen) {
-            s.setQuickOpenOpen(false);
-            return;
-          }
-          if (s.recentOpen) {
-            s.setRecentOpen(false);
-            return;
-          }
-          if (s.findOpen) {
-            s.setFindOpen(false);
-          }
-        });
+        if (isTauri()) {
+          const win = getCurrentWindow();
+          win.isFullscreen().then((fs) => {
+            if (fs) win.setFullscreen(false);
+            else closeTopDialog();
+          });
+        } else {
+          closeTopDialog();
+        }
         return;
       }
     };

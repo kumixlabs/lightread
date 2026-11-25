@@ -1,3 +1,4 @@
+import { ScrollArea as BaseScrollArea } from "@base-ui/react/scroll-area";
 import { BookOpenText, ChevronsDownUp, FolderOpen, FolderX, RefreshCw, Search } from "lucide-react";
 
 import { Badge } from "@kumix/ui/ui/badge";
@@ -78,7 +79,17 @@ export function Sidebar() {
 
       {hasFolder ? (
         <ScrollArea className="min-h-0 flex-1">
-          <FileTree />
+          {/* Content wrapper carries a ResizeObserver: collapsing tree nodes
+              shrinks content without viewport resize/scroll events, so without
+              this the scrollbar lingers after collapse. */}
+          <BaseScrollArea.Content
+            className="flex min-h-full flex-col"
+            // Neutralize Base UI's default min-width:fit-content — the tree
+            // must truncate long names, not overflow horizontally.
+            style={{ minWidth: 0 }}
+          >
+            <FileTree />
+          </BaseScrollArea.Content>
         </ScrollArea>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">

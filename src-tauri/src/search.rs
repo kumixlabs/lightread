@@ -70,11 +70,13 @@ fn search_dir(
             return;
         }
         let name = entry.file_name().to_string_lossy().into_owned();
-        if should_ignore(&name) || name.starts_with('.') {
-            continue;
-        }
         let path = entry.path();
         let is_dir = entry.file_type().map(|t| t.is_dir()).unwrap_or(false);
+        // Match the tree: skip ignored directories only — dotfiles (.env,
+        // .github, .gitignore) are visible in the tree and stay searchable.
+        if is_dir && should_ignore(&name) {
+            continue;
+        }
         if is_dir {
             let canon = path.canonicalize().unwrap_or_else(|_| path.clone());
             if seen.insert(canon) {
@@ -123,7 +125,7 @@ fn search_file(
         }
         // Fast path: case-sensitive search needs no per-line allocation.
         let hit = if case_sensitive {
-            line.contains(&query[..])
+            line.contains(query)
         } else {
             line.to_lowercase().contains(query_lower)
         };
