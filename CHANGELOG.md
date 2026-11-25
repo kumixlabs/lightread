@@ -2,6 +2,13 @@
 
 All notable changes to LightRead will be documented in this file.
 
+## 0.2.6 - 25-11-2026
+
+### Added
+
+- **Automatic updates**: the app checks for updates on launch and installs them in the background (download progress in the status bar), then relaunches. If tabs are unsaved when the update is staged, the relaunch is held and the badge shows "Restart to update" — one click finishes once work is saved. Failures surface on the badge with click-to-retry.
+- **Auto-update toggle** (Settings → Application & Updates): turn off background install for a notify-only mode — updates are checked and surfaced, but installed on click. The manual "Check updates" / "Update to vX" flow now shares the store install path, including the unsaved-work guard before restart.
+
 ## 0.2.5 - 25-11-2026
 
 ### Fixed

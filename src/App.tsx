@@ -175,7 +175,17 @@ export default function App() {
     let cancelled = false;
     check()
       .then((u) => {
-        if (!cancelled && u?.available) useStore.setState({ updateAvailable: u.version });
+        if (cancelled || !u?.available) return;
+        useStore.setState({ updateAvailable: u.version });
+        // Automatic update (toggleable in Settings): download + install +
+        // relaunch in the background. installUpdate holds the relaunch if any
+        // tab is dirty.
+        if (useStore.getState().settings.autoUpdate) {
+          void useStore
+            .getState()
+            .installUpdate()
+            .catch(() => {});
+        }
       })
       .catch(() => {});
     return () => {

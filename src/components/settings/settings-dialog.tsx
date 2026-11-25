@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { relaunch } from "@tauri-apps/plugin-process";
 import { check } from "@tauri-apps/plugin-updater";
 import {
   CheckCircle2,
@@ -30,6 +29,7 @@ import { Dialog, DialogContent, DialogTitle } from "@kumix/ui/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kumix/ui/ui/select";
 import { Slider } from "@kumix/ui/ui/slider";
 import { Switch } from "@kumix/ui/ui/switch";
+import { formatBytes } from "@/lib/utils";
 import { useStore } from "@/stores/app-store";
 import type { CodeTheme } from "@/types";
 
@@ -225,6 +225,17 @@ export function SettingsDialog() {
           </SettingRow>
 
           <SectionTitle>Application & Updates</SectionTitle>
+          <SettingRow
+            icon={RefreshCw}
+            label="Auto-update"
+            hint="Check on launch, download & install in the background, restart when ready"
+          >
+            <Switch
+              checked={settings.autoUpdate}
+              onCheckedChange={(v) => updateSettings({ autoUpdate: v })}
+            />
+          </SettingRow>
+          <div className="border-border border-t" />
           <UpdateCheckerRow />
         </div>
 
@@ -248,42 +259,49 @@ export function SettingsDialog() {
 }
 
 function UpdateCheckerRow() {
-  const [status, setStatus] = useState<
-    "idle" | "checking" | "latest" | "available" | "downloading" | "error"
-  >("idle");
-  const [newVersion, setNewVersion] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [updateHandle, setUpdateHandle] = useState<Awaited<ReturnType<typeof check>> | null>(null);
+  // Local state only covers the manual check; download/install/relaunch go
+  // through the store's installUpdate (shared with the status-bar badge),
+  // which enforces the dirty-tab guard before relaunching.
+  const [status, setStatus] = useState<"idle" | "checking" | "latest">("idle");
+  const [checkError, setCheckError] = useState<string | null>(null);
+  const updateAvailable = useStore((s) => s.updateAvailable);
+  const updateProgress = useStore((s) => s.updateProgress);
+  const updatePendingRestart = useStore((s) => s.updatePendingRestart);
+  const updateError = useStore((s) => s.updateError);
+  const installUpdate = useStore((s) => s.installUpdate);
 
   const handleCheckUpdate = async () => {
     setStatus("checking");
-    setErrorMessage(null);
+    setCheckError(null);
     try {
       const update = await check();
-      if (update?.available) {
-        setNewVersion(update.version);
-        setUpdateHandle(update);
-        setStatus("available");
-      } else {
-        setStatus("latest");
-      }
+      useStore.setState({ updateAvailable: update?.available ? update.version : null });
+      setStatus(update?.available ? "idle" : "latest");
     } catch (err) {
-      setStatus("error");
-      setErrorMessage(err instanceof Error ? err.message : "Failed to check for updates");
+      setStatus("idle");
+      setCheckError(err instanceof Error ? err.message : "Failed to check for updates");
     }
   };
 
-  const handleInstallUpdate = async () => {
-    if (!updateHandle) return;
-    setStatus("downloading");
-    try {
-      await updateHandle.downloadAndInstall();
-      await relaunch();
-    } catch (err) {
-      setStatus("error");
-      setErrorMessage(err instanceof Error ? err.message : "Failed to download update");
-    }
-  };
+  const busy = !!updateProgress;
+  const statusText =
+    status === "checking"
+      ? "Checking for new releases..."
+      : checkError
+        ? checkError
+        : updateError
+          ? updateError
+          : updateProgress
+            ? `Downloading & installing — ${formatBytes(updateProgress.received)}${
+                updateProgress.total ? ` / ${formatBytes(updateProgress.total)}` : ""
+              }`
+            : updatePendingRestart
+              ? `v${updateAvailable} installed — restart to finish`
+              : updateAvailable
+                ? `Update available: v${updateAvailable}`
+                : status === "latest"
+                  ? "You're on the latest version"
+                  : "Check GitHub Releases for updates";
 
   return (
     <div className="flex flex-col gap-2 py-3">
@@ -294,31 +312,33 @@ function UpdateCheckerRow() {
           </div>
           <div>
             <p className="text-sm font-medium">LightRead v{__APP_VERSION__}</p>
-            <p className="text-muted-foreground text-xs">
-              {status === "checking" && "Checking for new releases..."}
-              {status === "latest" && "You're on the latest version"}
-              {status === "available" && `Update available: v${newVersion}`}
-              {status === "downloading" && "Downloading & installing update..."}
-              {status === "error" && (errorMessage || "Update check failed")}
-              {status === "idle" && "Check GitHub Releases for updates"}
-            </p>
+            <p className="text-muted-foreground text-xs">{statusText}</p>
           </div>
         </div>
         <div>
-          {status === "available" ? (
-            <Button size="sm" onClick={handleInstallUpdate} className="gap-1.5">
-              <Download className="size-3.5" />
-              Update to v{newVersion}
+          {updateAvailable && !busy ? (
+            <Button size="sm" onClick={() => void installUpdate()} className="gap-1.5">
+              {updatePendingRestart ? (
+                <>
+                  <RotateCcw className="size-3.5" />
+                  Restart to update
+                </>
+              ) : (
+                <>
+                  <Download className="size-3.5" />
+                  Update to v{updateAvailable}
+                </>
+              )}
             </Button>
           ) : (
             <Button
               variant="outline"
               size="sm"
-              disabled={status === "checking" || status === "downloading"}
+              disabled={status === "checking" || busy}
               onClick={handleCheckUpdate}
               className="gap-1.5"
             >
-              {status === "checking" || status === "downloading" ? (
+              {status === "checking" || busy ? (
                 <Loader2 className="size-3.5 animate-spin" />
               ) : status === "latest" ? (
                 <CheckCircle2 className="size-3.5 text-emerald-500" />
@@ -327,7 +347,7 @@ function UpdateCheckerRow() {
               )}
               {status === "checking"
                 ? "Checking..."
-                : status === "downloading"
+                : busy
                   ? "Updating..."
                   : status === "latest"
                     ? "Up to date"

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import { AlertCircle, ArrowUpCircle, Monitor, Moon, Sun } from "lucide-react";
+import { AlertCircle, ArrowUpCircle, Loader2, Monitor, Moon, Sun } from "lucide-react";
 
-import { formatBytes, relativePath } from "@/lib/utils";
+import { cn, formatBytes, relativePath } from "@/lib/utils";
 import { useStore } from "@/stores/app-store";
 import type { Theme } from "@/types";
 
@@ -21,6 +21,9 @@ export function StatusBar() {
   const theme = useStore((s) => s.settings.theme);
   const updateSettings = useStore((s) => s.updateSettings);
   const updateAvailable = useStore((s) => s.updateAvailable);
+  const updateProgress = useStore((s) => s.updateProgress);
+  const updatePendingRestart = useStore((s) => s.updatePendingRestart);
+  const updateError = useStore((s) => s.updateError);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
   const file = activeTab?.file;
@@ -43,6 +46,52 @@ export function StatusBar() {
   };
 
   const ThemeIcon = THEME_ICON[theme];
+
+  // Rendered in both bar variants (with/without an active tab) so update
+  // notifications stay visible on the welcome screen.
+  const UpdateBadge = updateAvailable && (
+    <button
+      onClick={() => void useStore.getState().installUpdate()}
+      disabled={!!updateProgress}
+      className={cn(
+        "flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors",
+        updateError ? "text-destructive hover:bg-accent" : "text-primary hover:bg-accent",
+      )}
+      title={
+        updateProgress
+          ? `Downloading version ${updateAvailable}…`
+          : updatePendingRestart
+            ? `Version ${updateAvailable} installed — restart to finish`
+            : updateError
+              ? updateError
+              : `Version ${updateAvailable} available — click to install`
+      }
+    >
+      {updateProgress ? (
+        <>
+          <Loader2 className="size-3.5 animate-spin" />
+          <span className="shrink-0 tabular-nums">
+            {formatBytes(updateProgress.received)}
+            {updateProgress.total ? ` / ${formatBytes(updateProgress.total)}` : ""}
+          </span>
+        </>
+      ) : updatePendingRestart ? (
+        <>
+          <ArrowUpCircle className="size-3.5" />
+          Restart to update
+        </>
+      ) : updateError ? (
+        <>
+          <AlertCircle className="size-3.5" />
+          Update failed — click to retry
+        </>
+      ) : (
+        <>
+          <ArrowUpCircle className="size-3.5" />v{updateAvailable}
+        </>
+      )}
+    </button>
+  );
 
   const ThemeBtn = (
     <button
@@ -100,15 +149,7 @@ export function StatusBar() {
       )}
       <span className="shrink-0 tabular-nums">{formatBytes(file.size)}</span>
       <div className="bg-border h-3 w-px" />
-      {updateAvailable && (
-        <button
-          onClick={() => useStore.getState().setSettingsOpen(true)}
-          className="text-primary hover:bg-accent flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors"
-          title={`Version ${updateAvailable} available — click to install`}
-        >
-          <ArrowUpCircle className="size-3.5" />v{updateAvailable}
-        </button>
-      )}
+      {UpdateBadge}
       {ThemeBtn}
     </div>
   );

@@ -1,4 +1,5 @@
-import { exit } from "@tauri-apps/plugin-process";
+import { exit, relaunch } from "@tauri-apps/plugin-process";
+import { check } from "@tauri-apps/plugin-updater";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
@@ -102,6 +103,11 @@ interface AppState {
   pendingReveal: { path: string; line: number } | null;
   /** Newer release found by the startup update check. */
   updateAvailable: string | null;
+  /** Auto-update download progress (bytes); null when idle. */
+  updateProgress: { received: number; total: number | null } | null;
+  /** Update downloaded and staged; relaunch is held until dirty tabs are saved. */
+  updatePendingRestart: boolean;
+  updateError: string | null;
   /** Cursor position of the active editable surface (for status bar). */
   cursor: { line: number; col: number };
   /** Session restore: persisted open-tab paths (content is NOT restored). */
@@ -163,6 +169,8 @@ interface AppState {
   resolvePendingClose: (action: "save" | "discard" | "cancel") => Promise<void>;
   /** Intercept window close; prompts for unsaved tabs. */
   requestAppExit: () => Promise<void>;
+  /** Download + install the pending update, then relaunch (respects unsaved work). */
+  installUpdate: () => Promise<void>;
 
   updateSettings: (partial: Partial<AppSettings>) => void;
   resetSettings: () => void;
@@ -185,6 +193,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   autoRefresh: true,
   codeTheme: "auto",
   markdownDefaultMode: "source",
+  autoUpdate: true,
 };
 
 const persistentAppStorage = {
@@ -245,6 +254,9 @@ export const useStore = create<AppState>()(
       pendingClose: null,
       pendingReveal: null,
       updateAvailable: null,
+      updateProgress: null,
+      updatePendingRestart: false,
+      updateError: null,
       cursor: { line: 1, col: 1 },
       sessionTabs: [],
       sessionActive: null,
@@ -791,6 +803,54 @@ export const useStore = create<AppState>()(
 
         if (pending.exitAfter) {
           await exit(0);
+        }
+      },
+
+      installUpdate: async () => {
+        const s = get();
+        if (s.updateProgress) return;
+        // Downloaded and staged: all that's left is the relaunch.
+        if (s.updatePendingRestart) {
+          if (s.tabs.some((t) => isDirty(t))) {
+            set({ updateError: "Save or discard unsaved tabs before restarting." });
+            return;
+          }
+          await relaunch();
+          return;
+        }
+        try {
+          set({ updateError: null });
+          const update = await check();
+          if (!update?.available) {
+            set({ updateAvailable: null });
+            return;
+          }
+          set({ updateAvailable: update.version });
+          let received = 0;
+          let total: number | null = null;
+          await update.downloadAndInstall((event) => {
+            switch (event.event) {
+              case "Started":
+                total = event.data.contentLength ?? null;
+                set({ updateProgress: { received: 0, total } });
+                break;
+              case "Progress":
+                received += event.data.chunkLength;
+                set({ updateProgress: { received, total } });
+                break;
+              case "Finished":
+                set({ updateProgress: null, updatePendingRestart: true });
+                break;
+            }
+          });
+          if (get().tabs.some((t) => isDirty(t))) {
+            // Never restart away unsaved work — hold for manual relaunch.
+            set({ updatePendingRestart: true });
+            return;
+          }
+          await relaunch();
+        } catch (e) {
+          set({ updateProgress: null, updateError: `Update failed: ${String(e)}` });
         }
       },
 

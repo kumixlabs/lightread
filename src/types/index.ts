@@ -93,4 +93,6 @@ export interface AppSettings {
   autoRefresh: boolean;
   codeTheme: CodeTheme;
   markdownDefaultMode: "source" | "preview";
+  /** Automatically download, install, and relaunch on new releases (checked at launch). */
+  autoUpdate: boolean;
 }
